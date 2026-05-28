@@ -10,7 +10,7 @@ function author(id: string, name: string) {
 const mockPosts: Post[] = [
   {
     _id: 'post-001',
-    authorId: author(MOCK_CURRENT_USER_ID, 'Алексей Волков'),
+    authorId: author(MOCK_CURRENT_USER_ID, 'Алина Гарифуллина'),
     text: 'Вернулся из Стамбула — уже планирую маршрут по Каппадокии на весну.',
     mediaIds: ['media-030'],
     location: { lat: 41.0082, lng: 28.9784 },
@@ -109,7 +109,7 @@ const mockPosts: Post[] = [
   },
   {
     _id: 'post-013',
-    authorId: author(MOCK_CURRENT_USER_ID, 'Алексей Волков'),
+    authorId: author(MOCK_CURRENT_USER_ID, 'Алина Гарифуллина'),
     text: 'Кто был в Исландии в феврале? Нужны советы по маршруту на 7 дней без машины.',
     mediaIds: [],
     createdAt: isoDaysAgo(3),
@@ -200,7 +200,7 @@ export function mockCreatePost(payload: {
   const now = new Date().toISOString();
   const post: Post = {
     _id: `post-mock-${Date.now()}`,
-    authorId: author(MOCK_CURRENT_USER_ID, 'Алексей Волков'),
+    authorId: author(MOCK_CURRENT_USER_ID, 'Алина Гарифуллина'),
     text: payload.text,
     mediaIds: payload.mediaIds ?? [],
     location: payload.location,

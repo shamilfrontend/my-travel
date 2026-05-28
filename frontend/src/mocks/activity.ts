@@ -110,7 +110,7 @@ const mockActivityItems: ActivityItem[] = [
   },
   {
     _id: 'activity-008',
-    userId: userRef(MOCK_USER_IDS.alexey, 'Алексей Волков'),
+    userId: userRef(MOCK_USER_IDS.alexey, 'Алина Гарифуллина'),
     type: 'route',
     targetId: 'route-015',
     metadata: { name: 'Стамбул — базар и история' },
@@ -184,7 +184,7 @@ const mockActivityItems: ActivityItem[] = [
   },
   {
     _id: 'activity-017',
-    userId: userRef(MOCK_USER_IDS.alexey, 'Алексей Волков'),
+    userId: userRef(MOCK_USER_IDS.alexey, 'Алина Гарифуллина'),
     type: 'visited_place',
     targetId: 'visited-004',
     targetType: 'VisitedPlace',
@@ -253,7 +253,7 @@ const mockActivityItems: ActivityItem[] = [
   },
   {
     _id: 'activity-025',
-    userId: userRef(MOCK_USER_IDS.alexey, 'Алексей Волков'),
+    userId: userRef(MOCK_USER_IDS.alexey, 'Алина Гарифуллина'),
     type: 'geo_mark',
     targetId: 'mark-003',
     targetType: 'GeoMark',

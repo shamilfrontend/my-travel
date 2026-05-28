@@ -120,7 +120,7 @@ const mockPublicEvents: TravelEvent[] = [
 const mockMyEvents: TravelEvent[] = [
   {
     _id: 'event-101',
-    organizerId: organizer(MOCK_CURRENT_USER_ID, 'Алексей Волков'),
+    organizerId: organizer(MOCK_CURRENT_USER_ID, 'Алина Гарифуллина'),
     title: 'Стамбул — гастро-тур',
     description: 'Базар, рыбный рынок, кофе в Каракёе. Закрытая встреча.',
     location: 'Стамбул',
@@ -133,7 +133,7 @@ const mockMyEvents: TravelEvent[] = [
   },
   {
     _id: 'event-102',
-    organizerId: organizer(MOCK_CURRENT_USER_ID, 'Алексей Волков'),
+    organizerId: organizer(MOCK_CURRENT_USER_ID, 'Алина Гарифуллина'),
     title: 'Планирование поездки в Исландию',
     description: 'Созвон в Zoom, делимся маршрутами и бюджетом.',
     startDate: isoDaysFromNow(3),
@@ -172,7 +172,7 @@ export function mockCreateEvent(payload: {
   const now = new Date().toISOString();
   const event: TravelEvent = {
     _id: `event-mock-${Date.now()}`,
-    organizerId: organizer(MOCK_CURRENT_USER_ID, 'Алексей Волков'),
+    organizerId: organizer(MOCK_CURRENT_USER_ID, 'Алина Гарифуллина'),
     title: payload.title,
     description: payload.description,
     location: payload.location,

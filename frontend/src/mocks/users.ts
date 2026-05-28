@@ -8,7 +8,7 @@ export const mockUsers: User[] = [
   {
     _id: MOCK_USER_IDS.alexey,
     email: 'admin@admin.ru',
-    name: 'Алексей Волков',
+    name: 'Алина Гарифуллина',
     avatarUrl: avatarUrl('alexey'),
     coverUrl: coverUrl('cover-alexey'),
     birthDate: '1992-05-18',
@@ -160,7 +160,7 @@ export const mockUsers: User[] = [
 export const mockUsersWithStats: UserWithStats[] = [
   {
     _id: MOCK_USER_IDS.alexey,
-    name: 'Алексей Волков',
+    name: 'Алина Гарифуллина',
     avatarUrl: avatarUrl('alexey'),
     coverUrl: coverUrl('cover-alexey'),
     birthDate: '1992-05-18',
