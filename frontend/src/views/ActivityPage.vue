@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
 import { useActivityStore } from '@/stores/activity';
 import ActivityCard from '@/components/activity/ActivityCard.vue';
@@ -16,6 +16,11 @@ const TABS = [
   { key: 'registration', label: 'Люди' },
 ];
 
+const TAB_LABELS: Record<string, string> = TABS.reduce((accumulator, tab) => {
+  accumulator[tab.key] = tab.label;
+  return accumulator;
+}, {} as Record<string, string>);
+
 const debouncedSearch = useDebounceFn((value: string) => {
   store.setSearch(value);
 }, 300);
@@ -23,6 +28,19 @@ const debouncedSearch = useDebounceFn((value: string) => {
 function handleSearchInput(event: Event) {
   const target = event.target as HTMLInputElement;
   debouncedSearch(target.value);
+}
+
+const activeTabLabel = computed(() => TAB_LABELS[store.activeTab] ?? 'Все');
+const hasSearchQuery = computed(() => store.search.trim().length > 0);
+const hasFilteredEmptyState = computed(
+  () => store.items.length === 0 && store.hasActiveFilters,
+);
+const hasInitialEmptyState = computed(
+  () => store.items.length === 0 && !store.hasActiveFilters,
+);
+
+function handleResetFilters() {
+  store.resetFilters();
 }
 
 onMounted(() => {
@@ -56,37 +74,56 @@ onMounted(() => {
           </button>
         </div>
 
-        <div class="scope-toggle">
-          <button
-            :class="['scope-btn', { active: store.feedScope === 'all' }]"
-            @click="store.setScope('all')"
-          >
-            Все
-          </button>
-          <button
-            :class="['scope-btn', { active: store.feedScope === 'friends' }]"
-            @click="store.setScope('friends')"
-          >
-            Друзья
-          </button>
-        </div>
-
         <div class="tabs">
           <button
             v-for="tab in TABS"
             :key="tab.key"
             class="tab-btn"
             :class="{ active: store.activeTab === tab.key }"
+            :aria-pressed="store.activeTab === tab.key"
             @click="store.setTab(tab.key)"
           >
             {{ tab.label }}
           </button>
         </div>
 
-        <div v-if="store.isLoading" class="loading">Загрузка...</div>
+        <div class="filter-summary">
+          <div class="filter-chips" aria-live="polite">
+            <span class="filter-chip">
+              Тип: {{ activeTabLabel }}
+            </span>
+            <span v-if="hasSearchQuery" class="filter-chip">
+              Поиск: "{{ store.search }}"
+            </span>
+          </div>
+          <button
+            v-if="store.hasActiveFilters"
+            class="reset-filters-btn"
+            @click="handleResetFilters"
+          >
+            Сбросить все фильтры
+          </button>
+        </div>
+
+        <p class="results-caption" aria-live="polite">
+          Найдено: {{ store.total }}
+        </p>
+
+        <div v-if="store.isLoading" class="loading-skeleton" aria-label="Загрузка активности">
+          <div class="skeleton-item" />
+          <div class="skeleton-item" />
+          <div class="skeleton-item" />
+        </div>
 
         <template v-else>
-          <div v-if="store.items.length === 0" class="empty">
+          <div v-if="hasFilteredEmptyState" class="empty">
+            <p>По текущим фильтрам ничего не найдено</p>
+            <button class="empty-reset-btn" @click="handleResetFilters">
+              Сбросить фильтры
+            </button>
+          </div>
+
+          <div v-else-if="hasInitialEmptyState" class="empty">
             <p>Пока нет активности</p>
           </div>
 
@@ -203,28 +240,6 @@ onMounted(() => {
   }
 }
 
-.scope-toggle {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.scope-btn {
-  padding: 0.375rem 0.875rem;
-  border: 1px solid $gray-200;
-  background: white;
-  border-radius: $radius-lg;
-  font-size: $font-size-sm;
-  cursor: pointer;
-
-  &.active {
-    background: $accent;
-    color: $primary;
-    border-color: $primary;
-    font-weight: 600;
-  }
-}
-
 .tabs {
   display: flex;
   gap: 0.375rem;
@@ -257,13 +272,97 @@ onMounted(() => {
     background: $primary;
     color: white;
   }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 1px;
+  }
 }
 
-.loading,
+.filter-summary {
+  @include flex-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.filter-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: $radius-xl;
+  background: $gray-100;
+  color: $gray-700;
+  font-size: $font-size-sm;
+  font-weight: 500;
+}
+
+.reset-filters-btn {
+  @include button-base;
+  padding: 0.375rem 0.875rem;
+  border-radius: $radius-lg;
+  background: white;
+  color: $gray-700;
+  border: 1px solid $gray-300;
+  font-size: $font-size-sm;
+
+  &:hover {
+    background: $gray-50;
+    color: $gray-900;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 1px;
+  }
+}
+
+.results-caption {
+  margin: 0 0 1rem;
+  color: $gray-600;
+  font-size: $font-size-sm;
+  font-weight: 500;
+}
+
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.skeleton-item {
+  height: 96px;
+  border-radius: $radius-lg;
+  background: linear-gradient(90deg, $gray-100 0%, $gray-200 50%, $gray-100 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.2s infinite linear;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 .empty {
   text-align: center;
   color: $gray-500;
   padding: 3rem;
+}
+
+.empty-reset-btn {
+  @include button-secondary;
+  margin-top: 0.75rem;
 }
 
 .feed-list {
@@ -385,6 +484,15 @@ onMounted(() => {
 
   .activity-sidebar {
     flex-direction: column;
+  }
+
+  .filter-summary {
+    align-items: flex-start;
+  }
+
+  .reset-filters-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>

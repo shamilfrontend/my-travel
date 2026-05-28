@@ -13,9 +13,14 @@ export const useActivityStore = defineStore('activity', () => {
   const total = ref(0);
   const search = ref('');
   const activeTab = ref('all');
-  const feedScope = ref<'all' | 'friends'>('all');
 
   const hasMore = computed(() => currentPage.value < totalPages.value);
+  const hasActiveFilters = computed(() => {
+    return (
+      activeTab.value !== 'all' ||
+      search.value.trim().length > 0
+    );
+  });
 
   async function fetchFeed(reset = true) {
     if (reset) {
@@ -31,7 +36,6 @@ export const useActivityStore = defineStore('activity', () => {
         limit: 20,
         type: activeTab.value !== 'all' ? activeTab.value : undefined,
         search: search.value || undefined,
-        scope: feedScope.value === 'friends' ? 'friends' : undefined,
       });
 
       if (reset) {
@@ -72,8 +76,9 @@ export const useActivityStore = defineStore('activity', () => {
     fetchFeed();
   }
 
-  function setScope(scope: 'all' | 'friends') {
-    feedScope.value = scope;
+  function resetFilters() {
+    search.value = '';
+    activeTab.value = 'all';
     fetchFeed();
   }
 
@@ -87,13 +92,13 @@ export const useActivityStore = defineStore('activity', () => {
     total,
     search,
     activeTab,
-    feedScope,
     hasMore,
+    hasActiveFilters,
     fetchFeed,
     loadMore,
     fetchTags,
     setSearch,
     setTab,
-    setScope,
+    resetFilters,
   };
 });

@@ -42,8 +42,6 @@ function handleEscape(e: KeyboardEvent) {
 function notificationText(type: string): string {
   const map: Record<string, string> = {
     like: 'понравился ваш контент',
-    friend_request: 'отправил(а) заявку в друзья',
-    friend_accepted: 'принял(а) заявку в друзья',
   };
   return map[type] || 'новое уведомление';
 }
@@ -110,7 +108,7 @@ function closeMobileNav() {
         </router-link>
         <nav v-if="isAuthenticated" class="nav" aria-label="Основная навигация">
           <router-link to="/activity" class="nav-link">Лента активности</router-link>
-          <router-link to="/map" class="nav-link">#картаППР</router-link>
+          <router-link to="/map" class="nav-link">Карта</router-link>
           <router-link to="/routes" class="nav-link">Маршруты</router-link>
           <router-link to="/users" class="nav-link">Пользователи</router-link>
         </nav>
@@ -172,12 +170,6 @@ function closeMobileNav() {
           </transition>
         </div>
 
-        <button class="icon-btn" title="Закладки" aria-label="Закладки">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
-          </svg>
-        </button>
-
         <div ref="avatarWrapperRef" class="avatar-menu-wrapper">
           <button class="avatar-link" aria-label="Меню пользователя" :aria-expanded="isMenuOpen" @click="toggleMenu">
             <img v-if="avatarUrl" :src="avatarUrl" alt="Аватар" class="header-avatar" />
@@ -210,7 +202,7 @@ function closeMobileNav() {
         </div>
         <router-link to="/profile" class="mobile-nav-link" @click="closeMobileNav">Мой профиль</router-link>
         <router-link to="/activity" class="mobile-nav-link" @click="closeMobileNav">Лента активности</router-link>
-        <router-link to="/map" class="mobile-nav-link" @click="closeMobileNav">#картаППР</router-link>
+        <router-link to="/map" class="mobile-nav-link" @click="closeMobileNav">Карта</router-link>
         <router-link to="/routes" class="mobile-nav-link" @click="closeMobileNav">Маршруты</router-link>
         <router-link to="/users" class="mobile-nav-link" @click="closeMobileNav">Пользователи</router-link>
         <router-link to="/events" class="mobile-nav-link" @click="closeMobileNav">События</router-link>

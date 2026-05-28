@@ -1,7 +1,6 @@
 import type { ActivityFeedResponse, ActivityItem } from '@/types';
 import { avatarUrl, isoDaysAgo } from './helpers';
-import { MOCK_CURRENT_USER_ID, MOCK_USER_IDS } from './ids';
-import { mockFriendships } from './friendships';
+import { MOCK_USER_IDS } from './ids';
 
 export interface MockActivityFeedParams {
   page?: number;
@@ -9,28 +8,6 @@ export interface MockActivityFeedParams {
   type?: string;
   search?: string;
   scope?: string;
-}
-
-function getMockFriendIds(): Set<string> {
-  const friendIds = new Set<string>();
-
-  for (const friendship of mockFriendships) {
-    if (friendship.status !== 'accepted') continue;
-
-    const requesterId =
-      typeof friendship.requesterId === 'string'
-        ? friendship.requesterId
-        : friendship.requesterId._id;
-    const recipientId =
-      typeof friendship.recipientId === 'string'
-        ? friendship.recipientId
-        : friendship.recipientId._id;
-
-    if (requesterId === MOCK_CURRENT_USER_ID) friendIds.add(recipientId);
-    if (recipientId === MOCK_CURRENT_USER_ID) friendIds.add(requesterId);
-  }
-
-  return friendIds;
 }
 
 function matchesSearch(item: ActivityItem, search: string): boolean {
@@ -58,11 +35,6 @@ function filterMockActivityItems(params: MockActivityFeedParams): ActivityItem[]
 
   if (params.search) {
     items = items.filter((item) => matchesSearch(item, params.search!));
-  }
-
-  if (params.scope === 'friends') {
-    const friendIds = getMockFriendIds();
-    items = items.filter((item) => friendIds.has(item.userId._id));
   }
 
   return items.sort(

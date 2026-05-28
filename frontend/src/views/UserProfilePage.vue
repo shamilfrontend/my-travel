@@ -1,78 +1,33 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
 import type { UserWithStats, TravelRoute } from '@/types';
 import { usersApi } from '@/services/usersApi';
-import { friendsApi } from '@/services/friendsApi';
 import RouteList from '@/components/routes/RouteList.vue';
 import { getUserInitials } from '@/utils/user-initials';
 
 const route = useRoute();
-const authStore = useAuthStore();
 
 const profile = ref<UserWithStats | null>(null);
 const routes = ref<TravelRoute[]>([]);
 const isLoading = ref(false);
 const error = ref('');
-const friendStatus = ref('none');
-const friendshipId = ref<string | null>(null);
-const isRequester = ref(false);
-const isFriendActionLoading = ref(false);
 
-const isOwnProfile = computed(() => profile.value?._id === authStore.user?._id);
 const userId = computed(() => route.params.id as string);
 
 async function loadProfile() {
   isLoading.value = true;
   try {
-    const [profileData, routesData, status] = await Promise.all([
+    const [profileData, routesData] = await Promise.all([
       usersApi.getById(userId.value),
       usersApi.getUserRoutes(userId.value),
-      friendsApi.getStatus(userId.value),
     ]);
     profile.value = profileData;
     routes.value = routesData;
-    friendStatus.value = status.status;
-    friendshipId.value = status.friendshipId || null;
-    isRequester.value = status.isRequester || false;
   } catch {
     error.value = 'Не удалось загрузить профиль';
   } finally {
     isLoading.value = false;
-  }
-}
-
-async function handleAddFriend() {
-  isFriendActionLoading.value = true;
-  try {
-    await friendsApi.sendRequest(userId.value);
-    friendStatus.value = 'pending';
-    isRequester.value = true;
-  } finally {
-    isFriendActionLoading.value = false;
-  }
-}
-
-async function handleAcceptFriend() {
-  if (!friendshipId.value) return;
-  isFriendActionLoading.value = true;
-  try {
-    await friendsApi.accept(friendshipId.value);
-    friendStatus.value = 'accepted';
-  } finally {
-    isFriendActionLoading.value = false;
-  }
-}
-
-async function handleRemoveFriend() {
-  isFriendActionLoading.value = true;
-  try {
-    await friendsApi.remove(userId.value);
-    friendStatus.value = 'none';
-    friendshipId.value = null;
-  } finally {
-    isFriendActionLoading.value = false;
   }
 }
 
@@ -118,35 +73,6 @@ onMounted(loadProfile);
             <h1>{{ profile.name }}</h1>
             <span class="since">на PPR Travel с {{ formatDate(profile.createdAt) }}</span>
           </div>
-        </div>
-
-        <div class="profile-actions" v-if="!isOwnProfile">
-          <button
-            v-if="friendStatus === 'none'"
-            class="btn-primary btn-sm"
-            :disabled="isFriendActionLoading"
-            @click="handleAddFriend"
-          >
-            Добавить в друзья
-          </button>
-          <button
-            v-else-if="friendStatus === 'pending' && !isRequester"
-            class="btn-primary btn-sm"
-            :disabled="isFriendActionLoading"
-            @click="handleAcceptFriend"
-          >
-            Принять заявку
-          </button>
-          <span v-else-if="friendStatus === 'pending' && isRequester" class="status-text">Заявка отправлена</span>
-          <template v-else-if="friendStatus === 'accepted'">
-            <button
-              class="btn-danger btn-sm"
-              :disabled="isFriendActionLoading"
-              @click="handleRemoveFriend"
-            >
-              Удалить из друзей
-            </button>
-          </template>
         </div>
 
         <div class="profile-stats">
@@ -195,12 +121,6 @@ onMounted(loadProfile);
   gap: 1.25rem;
 }
 
-.profile-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
 .avatar {
   @include flex-center;
   width: 5rem;
@@ -235,11 +155,6 @@ onMounted(loadProfile);
   color: $gray-400;
 }
 
-.status-text {
-  font-size: $font-size-sm;
-  color: $gray-500;
-}
-
 .profile-stats {
   display: flex;
   gap: 2rem;
@@ -270,21 +185,6 @@ onMounted(loadProfile);
   font-size: $font-size-sm;
   color: $gray-500;
   margin-top: 0.25rem;
-}
-
-.btn-sm {
-  padding: 0.375rem 0.75rem;
-  font-size: $font-size-sm;
-}
-
-.btn-danger {
-  @include button-base;
-  background: $danger;
-  color: white;
-
-  &:hover {
-    opacity: 0.9;
-  }
 }
 
 .profile-routes {

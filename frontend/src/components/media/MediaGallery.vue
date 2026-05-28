@@ -2,6 +2,8 @@
 import { ref, watch, computed } from 'vue';
 import type { Media } from '@/types';
 import { mediaApi } from '@/services/mediaApi';
+import { USE_MOCKS } from '@/config/useMocks';
+import { mockMedia } from '@/mocks';
 import MediaItem from './MediaItem.vue';
 
 interface Props {
@@ -38,6 +40,24 @@ watch(
       const alreadyLoaded = loadedMedia.value.find((m) => m._id === id);
       if (alreadyLoaded) {
         results.push(alreadyLoaded);
+      } else if (USE_MOCKS) {
+        const mockItem = mockMedia.find((item) => item._id === id);
+        if (mockItem) {
+          results.push(mockItem);
+          continue;
+        }
+
+        results.push({
+          _id: id,
+          originalName: '',
+          mimeType: 'image/jpeg',
+          size: 0,
+          path: '',
+          thumbnailPath: '',
+          type: 'image',
+          ownerId: '',
+          createdAt: '',
+        });
       } else {
         results.push({
           _id: id,

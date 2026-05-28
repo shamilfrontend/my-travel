@@ -6,7 +6,7 @@ declare module '*.vue' {
   export default component;
 }
 
-declare module 'world-atlas/countries-110m.json' {
+declare module 'world-atlas/countries-50m.json' {
   const data: Record<string, unknown>;
   export default data;
 }

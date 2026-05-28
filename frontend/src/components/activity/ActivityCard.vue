@@ -48,11 +48,121 @@ function formatDate(dateStr: string): string {
 }
 
 function getTitle(): string {
-  return (props.activity.metadata?.title as string) || '';
+  const metadata = props.activity.metadata;
+  if (!metadata) return '';
+
+  if (typeof metadata.title === 'string' && metadata.title.trim()) {
+    return metadata.title;
+  }
+
+  if (typeof metadata.name === 'string' && metadata.name.trim()) {
+    return metadata.name;
+  }
+
+  return '';
 }
 
 function getUserLink(): string {
   return `/users/${props.activity.userId._id}`;
+}
+
+function getPreviewText(): string {
+  const preview = props.activity.metadata?.preview;
+  if (typeof preview !== 'string' || !preview.trim()) {
+    return '';
+  }
+
+  return preview.trim();
+}
+
+function getBodyText(): string {
+  const title = getTitle();
+  const preview = getPreviewText();
+
+  if (preview) {
+    return preview;
+  }
+
+  if (title) {
+    if (props.activity.type === 'like') {
+      return `Отметил(а) понравившимся: ${title}`;
+    }
+    if (props.activity.type === 'visited_place') {
+      return `Поделился(-ась) местом: ${title}`;
+    }
+    return title;
+  }
+
+  if (props.activity.type === 'registration') {
+    return 'Новый участник сообщества путешественников.';
+  }
+
+  return 'Подробности активности пока недоступны.';
+}
+
+function getMetaTag(): string {
+  if (props.activity.targetType === 'Route') {
+    return 'Маршрут';
+  }
+  if (props.activity.targetType === 'VisitedPlace') {
+    return 'Место';
+  }
+  if (props.activity.targetType === 'GeoMark') {
+    return 'Метка';
+  }
+  if (props.activity.type === 'post') {
+    return 'Пост';
+  }
+  if (props.activity.type === 'event') {
+    return 'Событие';
+  }
+
+  return 'Активность';
+}
+
+function getTargetLink(): string | null {
+  if (!props.activity.targetId) {
+    return null;
+  }
+
+  if (props.activity.type === 'route') {
+    return `/routes/${props.activity.targetId}`;
+  }
+
+  if (props.activity.type === 'event') {
+    return `/events?eventId=${props.activity.targetId}`;
+  }
+
+  if (props.activity.type === 'post') {
+    return `/profile?tab=posts&postId=${props.activity.targetId}`;
+  }
+
+  if (props.activity.type === 'geo_mark') {
+    return '/map?tab=all';
+  }
+
+  if (props.activity.type === 'visited_place') {
+    return '/map?tab=my';
+  }
+
+  return null;
+}
+
+function getTargetActionLabel(): string {
+  if (props.activity.type === 'route') {
+    return 'Открыть маршрут';
+  }
+  if (props.activity.type === 'event') {
+    return 'К событиям';
+  }
+  if (props.activity.type === 'post') {
+    return 'К профилю автора';
+  }
+  if (props.activity.type === 'geo_mark' || props.activity.type === 'visited_place') {
+    return 'Открыть на карте';
+  }
+
+  return 'Открыть';
 }
 </script>
 
@@ -78,34 +188,20 @@ function getUserLink(): string {
       </span>
     </div>
 
-    <div v-if="getTitle()" class="card-body">
-      <h3 class="activity-title">{{ getTitle() }}</h3>
-    </div>
-
-    <div class="card-footer">
-      <div class="footer-stats">
-        <span class="stat-item">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-          </svg>
-        </span>
-        <span class="stat-item">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-          </svg>
-        </span>
-        <span class="stat-item">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </span>
+    <div class="card-body">
+      <h3 v-if="getTitle()" class="activity-title">{{ getTitle() }}</h3>
+      <p class="activity-text">{{ getBodyText() }}</p>
+      <div class="meta-row">
+        <span class="meta-tag">{{ getMetaTag() }}</span>
+        <span v-if="activity.targetId" class="meta-id">ID: {{ activity.targetId }}</span>
+        <router-link
+          v-if="getTargetLink()"
+          class="meta-action"
+          :to="getTargetLink()!"
+        >
+          {{ getTargetActionLabel() }}
+        </router-link>
       </div>
-      <button class="share-btn" title="Поделиться">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
-        </svg>
-      </button>
     </div>
   </div>
 </template>
@@ -218,51 +314,52 @@ function getUserLink(): string {
 }
 
 .activity-title {
-  margin: 0;
-  font-size: $font-size-lg;
+  margin: 0 0 0.375rem;
+  font-size: $font-size-base;
   font-weight: 600;
   color: $gray-800;
 }
 
-.card-footer {
-  @include flex-between;
-  padding-top: 0.75rem;
-  border-top: 1px solid $gray-100;
+.activity-text {
+  margin: 0;
+  color: $gray-700;
+  font-size: $font-size-sm;
+  line-height: 1.5;
 }
 
-.footer-stats {
-  display: flex;
-  gap: 1rem;
-}
-
-.stat-item {
+.meta-row {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  color: $gray-400;
-  font-size: $font-size-sm;
-  cursor: pointer;
-  transition: color $transition;
-
-  &:hover {
-    color: $gray-600;
-  }
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid $gray-100;
+  flex-wrap: wrap;
 }
 
-.share-btn {
-  @include flex-center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  color: $gray-400;
-  cursor: pointer;
-  border-radius: 50%;
-  transition: all $transition;
+.meta-tag {
+  padding: 0.25rem 0.625rem;
+  border-radius: $radius-xl;
+  background: $gray-100;
+  color: $gray-700;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.meta-id {
+  font-size: 0.75rem;
+  color: $gray-500;
+}
+
+.meta-action {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $primary;
+  text-decoration: none;
 
   &:hover {
-    background: $gray-100;
-    color: $gray-600;
+    text-decoration: underline;
   }
 }
 

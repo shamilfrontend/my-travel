@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { eventsApi } from '@/services/eventsApi';
 import type { TravelEvent } from '@/types';
 
+const route = useRoute();
 const publicEvents = ref<TravelEvent[]>([]);
 const myEvents = ref<TravelEvent[]>([]);
 const activeTab = ref<'public' | 'mine'>('public');
@@ -14,6 +16,10 @@ const formDescription = ref('');
 const formLocation = ref('');
 const formStartDate = ref('');
 const isCreating = ref(false);
+const highlightedEventId = computed(() => {
+  const value = route.query.eventId;
+  return typeof value === 'string' ? value : '';
+});
 
 async function loadEvents() {
   isLoading.value = true;
@@ -65,7 +71,24 @@ function formatDate(dateStr: string) {
   });
 }
 
-onMounted(loadEvents);
+onMounted(async () => {
+  await loadEvents();
+
+  if (!highlightedEventId.value) {
+    return;
+  }
+
+  const isInMine = myEvents.value.some((event) => event._id === highlightedEventId.value);
+  const isInPublic = publicEvents.value.some(
+    (event) => event._id === highlightedEventId.value,
+  );
+
+  if (isInMine) {
+    activeTab.value = 'mine';
+  } else if (isInPublic) {
+    activeTab.value = 'public';
+  }
+});
 </script>
 
 <template>
@@ -112,7 +135,7 @@ onMounted(loadEvents);
       <div
         v-for="event in (activeTab === 'public' ? publicEvents : myEvents)"
         :key="event._id"
-        class="event-card"
+        :class="['event-card', { highlighted: event._id === highlightedEventId }]"
       >
         <h3>{{ event.title }}</h3>
         <p v-if="event.description" class="desc">{{ event.description }}</p>
@@ -195,6 +218,11 @@ onMounted(loadEvents);
   h3 {
     margin-bottom: 0.5rem;
   }
+}
+
+.event-card.highlighted {
+  border: 1px solid $primary;
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.16);
 }
 
 .desc {

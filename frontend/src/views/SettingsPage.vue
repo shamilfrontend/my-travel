@@ -14,9 +14,8 @@ const isSaving = ref(false);
 const passwordMessage = ref('');
 const passwordError = ref('');
 
-const profilePrivacy = ref<'public' | 'friends'>('public');
+const profilePrivacy = ref<'public'>('public');
 const emailLikes = ref(true);
-const emailFriendRequests = ref(true);
 const isSavingSettings = ref(false);
 const settingsMessage = ref('');
 
@@ -51,7 +50,6 @@ async function handleSaveSettings() {
       profilePrivacy: profilePrivacy.value,
       emailNotifications: {
         likes: emailLikes.value,
-        friendRequests: emailFriendRequests.value,
       },
     });
     settingsMessage.value = 'Настройки сохранены';
@@ -76,7 +74,6 @@ async function handleLogout() {
 onMounted(() => {
   profilePrivacy.value = authStore.user?.profilePrivacy || 'public';
   emailLikes.value = authStore.user?.emailNotifications?.likes ?? true;
-  emailFriendRequests.value = authStore.user?.emailNotifications?.friendRequests ?? true;
 });
 </script>
 
@@ -101,17 +98,12 @@ onMounted(() => {
         <label>Видимость профиля</label>
         <select v-model="profilePrivacy" class="input">
           <option value="public">Публичный</option>
-          <option value="friends">Только друзья</option>
         </select>
       </div>
       <h3>Email-уведомления</h3>
       <label class="checkbox-label">
         <input v-model="emailLikes" type="checkbox" />
         Лайки
-      </label>
-      <label class="checkbox-label">
-        <input v-model="emailFriendRequests" type="checkbox" />
-        Заявки в друзья
       </label>
       <p v-if="settingsMessage" class="success">{{ settingsMessage }}</p>
       <button class="btn-primary" :disabled="isSavingSettings" @click="handleSaveSettings">

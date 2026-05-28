@@ -131,10 +131,9 @@ export const authApi = {
   },
 
   async updateSettings(payload: {
-    profilePrivacy?: 'public' | 'friends';
+    profilePrivacy?: 'public';
     emailNotifications?: {
       likes?: boolean;
-      friendRequests?: boolean;
     };
   }): Promise<User> {
     if (USE_MOCKS) {

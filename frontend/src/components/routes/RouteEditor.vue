@@ -100,7 +100,7 @@ async function handleQuickCreate() {
 }
 
 function goToMapMarks() {
-  router.push({ path: '/map', query: { tab: 'marks' } });
+  router.push({ path: '/map', query: { tab: 'my' } });
 }
 
 async function handleSubmit() {

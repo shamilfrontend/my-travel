@@ -122,7 +122,7 @@ export const mockMyEvents: TravelEvent[] = [
     _id: 'event-101',
     organizerId: organizer(MOCK_CURRENT_USER_ID, 'Алексей Волков'),
     title: 'Стамбул — гастро-тур',
-    description: 'Базар, рыбный рынок, кофе в Каракёе. Только для друзей.',
+    description: 'Базар, рыбный рынок, кофе в Каракёе. Закрытая встреча.',
     location: 'Стамбул',
     coordinates: { lat: 41.0106, lng: 28.968 },
     startDate: isoDaysFromNow(5),

@@ -19,14 +19,6 @@ export const mockNotifications: AppNotification[] = [
   },
   {
     _id: 'notif-002',
-    type: 'friend_request',
-    actorId: actor(MOCK_USER_IDS.sofia, 'София Романова'),
-    message: 'хочет добавить вас в друзья',
-    isRead: false,
-    createdAt: isoDaysAgo(2),
-  },
-  {
-    _id: 'notif-003',
     type: 'like',
     actorId: actor(MOCK_USER_IDS.anna, 'Анна Белова'),
     targetId: 'mark-001',
@@ -34,14 +26,6 @@ export const mockNotifications: AppNotification[] = [
     message: 'понравилась ваша метка «Эйфелева башня»',
     isRead: false,
     createdAt: isoDaysAgo(3),
-  },
-  {
-    _id: 'notif-004',
-    type: 'friend_accepted',
-    actorId: actor(MOCK_USER_IDS.dmitry, 'Дмитрий Козлов'),
-    message: 'принял вашу заявку в друзья',
-    isRead: true,
-    createdAt: isoDaysAgo(5),
   },
   {
     _id: 'notif-005',
@@ -54,14 +38,6 @@ export const mockNotifications: AppNotification[] = [
     createdAt: isoDaysAgo(7),
   },
   {
-    _id: 'notif-006',
-    type: 'friend_request',
-    actorId: actor(MOCK_USER_IDS.katya, 'Екатерина Лебедева'),
-    message: 'хочет добавить вас в друзья',
-    isRead: true,
-    createdAt: isoDaysAgo(10),
-  },
-  {
     _id: 'notif-007',
     type: 'like',
     actorId: actor(MOCK_USER_IDS.elena, 'Елена Морозова'),
@@ -70,14 +46,6 @@ export const mockNotifications: AppNotification[] = [
     message: 'понравилось ваше место «Стамбул»',
     isRead: true,
     createdAt: isoDaysAgo(12),
-  },
-  {
-    _id: 'notif-008',
-    type: 'friend_accepted',
-    actorId: actor(MOCK_USER_IDS.maria, 'Мария Соколова'),
-    message: 'приняла вашу заявку в друзья',
-    isRead: true,
-    createdAt: isoDaysAgo(20),
   },
   {
     _id: 'notif-009',
@@ -90,14 +58,6 @@ export const mockNotifications: AppNotification[] = [
     createdAt: isoDaysAgo(25),
   },
   {
-    _id: 'notif-010',
-    type: 'friend_request',
-    actorId: actor(MOCK_USER_IDS.pavel, 'Павел Смирнов'),
-    message: 'хочет добавить вас в друзья',
-    isRead: true,
-    createdAt: isoDaysAgo(30),
-  },
-  {
     _id: 'notif-011',
     type: 'like',
     actorId: actor(MOCK_USER_IDS.olga, 'Ольга Новикова'),
@@ -105,14 +65,6 @@ export const mockNotifications: AppNotification[] = [
     targetType: 'Route',
     isRead: true,
     createdAt: isoDaysAgo(32),
-  },
-  {
-    _id: 'notif-012',
-    type: 'friend_accepted',
-    actorId: actor(MOCK_USER_IDS.anna, 'Анна Белова'),
-    message: 'приняла вашу заявку в друзья',
-    isRead: true,
-    createdAt: isoDaysAgo(45),
   },
 ];
 

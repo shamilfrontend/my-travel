@@ -8,6 +8,7 @@ export * from './helpers';
 
 export { mockUsers, mockUsersWithStats } from './users';
 export { mockMedia } from './media';
+export { mockVisitedPlaceComments } from './visited-comments';
 export { mockGeoMarks } from './geo-marks';
 export { mockVisitedPlaces } from './visited-places';
 export { mockRoutes } from './routes';
@@ -36,15 +37,6 @@ export {
   mockMarkAllNotificationsRead,
 } from './notifications';
 export {
-  mockFriendships,
-  getMockFriendStatus,
-  getMockPendingFriendships,
-  mockAcceptFriendRequest,
-  mockDeclineFriendRequest,
-  mockRemoveFriend,
-  mockSendFriendRequest,
-} from './friendships';
-export {
   mockPosts,
   getMockPostsResponse,
   mockCreatePost,
@@ -69,31 +61,7 @@ import { mockRoutes } from './routes';
 import { mockVisitedPlaces } from './visited-places';
 import { mockGeoMarks } from './geo-marks';
 import { mockWishlistPlaces } from './wishlist';
-import { getRuntimeMockFriendships } from './friendships';
 import { mockVisitedStatisticsByUser } from './statistics';
-
-/** Друзья текущего пользователя (accepted) */
-export function getMockFriends(): UserWithStats[] {
-  const friendIds = new Set<string>();
-
-  for (const friendship of getRuntimeMockFriendships()) {
-    if (friendship.status !== 'accepted') continue;
-
-    const requesterId =
-      typeof friendship.requesterId === 'string'
-        ? friendship.requesterId
-        : friendship.requesterId._id;
-    const recipientId =
-      typeof friendship.recipientId === 'string'
-        ? friendship.recipientId
-        : friendship.recipientId._id;
-
-    if (requesterId === MOCK_CURRENT_USER_ID) friendIds.add(recipientId);
-    if (recipientId === MOCK_CURRENT_USER_ID) friendIds.add(requesterId);
-  }
-
-  return mockUsersWithStats.filter((u) => friendIds.has(u._id));
-}
 
 export function getMockUserById(id: string): UserWithStats | undefined {
   return mockUsersWithStats.find((u) => u._id === id);

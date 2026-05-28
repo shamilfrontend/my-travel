@@ -1,45 +1,46 @@
 import type { VisitedStatistics } from '@/types';
 import { MOCK_CURRENT_USER_ID, MOCK_USER_IDS } from './ids';
+import { mockVisitedPlaces } from './visited-places';
+import { detectCountryByPlaceTitle } from '@/config/country-rules';
 
-export const mockVisitedStatisticsByUser: Record<string, VisitedStatistics> = {
-  [MOCK_CURRENT_USER_ID]: {
-    totalPlaces: 47,
-    countries: ['Франция', 'Италия', 'Япония', 'Турция', 'Иордания', 'Таиланд'],
-    countryCodes: ['FR', 'IT', 'JP', 'TR', 'JO', 'TH'],
-    years: [2023, 2024, 2025],
-  },
-  [MOCK_USER_IDS.maria]: {
-    totalPlaces: 31,
-    countries: ['Чехия', 'Австрия', 'Италия', 'Франция'],
-    countryCodes: ['CZ', 'AT', 'IT', 'FR'],
-    years: [2023, 2024, 2025],
-  },
-  [MOCK_USER_IDS.dmitry]: {
-    totalPlaces: 22,
-    countries: ['Россия'],
-    countryCodes: ['RU'],
-    years: [2024, 2025],
-  },
-  [MOCK_USER_IDS.elena]: {
-    totalPlaces: 28,
-    countries: ['Россия', 'Турция'],
-    countryCodes: ['RU', 'TR'],
-    years: [2024, 2025],
-  },
-  [MOCK_USER_IDS.anna]: {
-    totalPlaces: 35,
-    countries: ['Испания', 'Нидерланды', 'Португалия', 'Германия'],
-    countryCodes: ['ES', 'NL', 'PT', 'DE'],
-    years: [2023, 2024, 2025],
-  },
-};
+function detectCountry(placeTitle: string): { code: string; name: string } {
+  return detectCountryByPlaceTitle(placeTitle)
+    || { code: 'RU', name: 'Россия' };
+}
 
-export const mockPublicVisitedStatistics: VisitedStatistics = {
-  totalPlaces: 312,
-  countries: [
-    'Россия', 'Франция', 'Италия', 'Испания', 'Япония', 'Турция',
-    'Чехия', 'Португалия', 'Индонезия', 'Грузия',
-  ],
-  countryCodes: ['RU', 'FR', 'IT', 'ES', 'JP', 'TR', 'CZ', 'PT', 'ID', 'GE'],
-  years: [2023, 2024, 2025],
-};
+function buildStatsFromPlaces(placeUserId?: string): VisitedStatistics {
+  const list = placeUserId
+    ? mockVisitedPlaces.filter((place) => place.userId === placeUserId)
+    : mockVisitedPlaces;
+
+  const countryByCode = new Map<string, string>();
+  const years = new Set<number>();
+
+  list.forEach((place) => {
+    const country = detectCountry(place.title);
+    countryByCode.set(country.code, country.name);
+    if (place.visitedDate) {
+      years.add(new Date(place.visitedDate).getFullYear());
+    }
+  });
+
+  const countryCodes = Array.from(countryByCode.keys()).sort();
+  const countries = countryCodes.map((code) => countryByCode.get(code) || code);
+
+  return {
+    totalPlaces: list.length,
+    countries,
+    countryCodes,
+    years: Array.from(years).sort((a, b) => a - b),
+  };
+}
+
+const userIds = Array.from(new Set([
+  MOCK_CURRENT_USER_ID,
+  ...Object.values(MOCK_USER_IDS),
+]));
+
+export const mockVisitedStatisticsByUser: Record<string, VisitedStatistics> =
+  Object.fromEntries(userIds.map((userId) => [userId, buildStatsFromPlaces(userId)]));
+
+export const mockPublicVisitedStatistics: VisitedStatistics = buildStatsFromPlaces();

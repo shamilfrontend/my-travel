@@ -8,10 +8,9 @@ export interface User {
   city?: string;
   bio?: string;
   interests?: string[];
-  profilePrivacy?: 'public' | 'friends';
+  profilePrivacy?: 'public';
   emailNotifications?: {
     likes?: boolean;
-    friendRequests?: boolean;
   };
   createdAt: string;
   updatedAt: string;
@@ -137,7 +136,7 @@ export interface RecommendedTag {
 
 export interface AppNotification {
   _id: string;
-  type: 'like' | 'friend_request' | 'friend_accepted';
+  type: 'like';
   actorId: {
     _id: string;
     name: string;
@@ -147,14 +146,6 @@ export interface AppNotification {
   targetType?: string;
   message?: string;
   isRead: boolean;
-  createdAt: string;
-}
-
-export interface Friendship {
-  _id: string;
-  requesterId: string | { _id: string; name: string; avatarUrl?: string };
-  recipientId: string | { _id: string; name: string; avatarUrl?: string };
-  status: 'pending' | 'accepted' | 'declined';
   createdAt: string;
 }
 

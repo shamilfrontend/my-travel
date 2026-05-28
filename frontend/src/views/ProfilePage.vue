@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useVisitedStore } from '@/stores/visited';
 import { useRoutesStore } from '@/stores/routes';
@@ -11,6 +12,7 @@ import { getUserInitials } from '@/utils/user-initials';
 import type { UserWithStats, TravelEvent } from '@/types';
 
 const authStore = useAuthStore();
+const route = useRoute();
 const visitedStore = useVisitedStore();
 const routesStore = useRoutesStore();
 const postsStore = usePostsStore();
@@ -21,6 +23,14 @@ const isLoadingProfile = ref(true);
 const myEvents = ref<TravelEvent[]>([]);
 const newPostText = ref('');
 const isCreatingPost = ref(false);
+const highlightedPostId = computed(() => {
+  const value = route.query.postId;
+  return typeof value === 'string' ? value : '';
+});
+const highlightedEventId = computed(() => {
+  const value = route.query.eventId;
+  return typeof value === 'string' ? value : '';
+});
 
 const showEditForm = ref(false);
 const editName = ref('');
@@ -103,6 +113,20 @@ async function saveProfile() {
 }
 
 onMounted(async () => {
+  const queryTab = route.query.tab;
+  if (
+    queryTab === 'travels' ||
+    queryTab === 'routes' ||
+    queryTab === 'posts' ||
+    queryTab === 'events'
+  ) {
+    activeTab.value = queryTab;
+  } else if (highlightedPostId.value) {
+    activeTab.value = 'posts';
+  } else if (highlightedEventId.value) {
+    activeTab.value = 'events';
+  }
+
   isLoadingProfile.value = true;
   try {
     if (authStore.user?._id) {
@@ -289,7 +313,11 @@ onMounted(async () => {
 							<p>Постов пока нет</p>
 						</div>
 						<div v-else class="posts-list">
-							<div v-for="post in postsStore.posts" :key="post._id" class="post-card">
+							<div
+								v-for="post in postsStore.posts"
+								:key="post._id"
+								:class="['post-card', { highlighted: post._id === highlightedPostId }]"
+							>
 								<p>{{ post.text }}</p>
 								<span class="post-date">{{ new Date(post.createdAt).toLocaleDateString('ru-RU') }}</span>
 							</div>
@@ -302,7 +330,11 @@ onMounted(async () => {
 							<router-link to="/events" class="btn-secondary btn-sm">Создать событие</router-link>
 						</div>
 						<div v-else class="events-list">
-							<div v-for="event in myEvents" :key="event._id" class="event-card">
+							<div
+								v-for="event in myEvents"
+								:key="event._id"
+								:class="['event-card', { highlighted: event._id === highlightedEventId }]"
+							>
 								<h4>{{ event.title }}</h4>
 								<p v-if="event.location">{{ event.location }}</p>
 								<span class="event-date">{{ new Date(event.startDate).toLocaleDateString('ru-RU') }}</span>
@@ -414,19 +446,17 @@ onMounted(async () => {
 
 .avatar-wrapper {
   position: relative;
-  margin-top: -40px;
   margin-bottom: 0.75rem;
 }
 
 .avatar-container {
   position: relative;
-  width: 80px;
-  height: 80px;
 }
 
 .profile-avatar {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
+	margin-top: -60px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid white;
@@ -446,8 +476,8 @@ onMounted(async () => {
 
 .online-indicator {
   position: absolute;
-  bottom: 4px;
-  left: 4px;
+	top: 36px;
+	left: 12px;
   width: 14px;
   height: 14px;
   background: #22C55E;
@@ -710,6 +740,12 @@ onMounted(async () => {
   h4 {
     margin: 0 0 0.5rem;
   }
+}
+
+.post-card.highlighted,
+.event-card.highlighted {
+  border: 1px solid $primary;
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.16);
 }
 
 .post-date,
