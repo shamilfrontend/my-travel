@@ -6,7 +6,7 @@ function organizer(id: string, name: string) {
   return { _id: id, name, avatarUrl: avatarUrl(id.replace('user-', '')) };
 }
 
-export const mockPublicEvents: TravelEvent[] = [
+const mockPublicEvents: TravelEvent[] = [
   {
     _id: 'event-001',
     organizerId: organizer(MOCK_USER_IDS.anna, 'Анна Белова'),
@@ -117,7 +117,7 @@ export const mockPublicEvents: TravelEvent[] = [
   },
 ];
 
-export const mockMyEvents: TravelEvent[] = [
+const mockMyEvents: TravelEvent[] = [
   {
     _id: 'event-101',
     organizerId: organizer(MOCK_CURRENT_USER_ID, 'Алексей Волков'),

@@ -2,7 +2,7 @@ import type { Like } from '@/types';
 import { isoDaysAgo } from './helpers';
 import { MOCK_CURRENT_USER_ID, MOCK_USER_IDS } from './ids';
 
-export const mockLikes: Like[] = [
+const mockLikes: Like[] = [
   { _id: 'like-001', userId: MOCK_USER_IDS.maria, targetType: 'VisitedPlace', targetId: 'visited-001', createdAt: isoDaysAgo(270) },
   { _id: 'like-002', userId: MOCK_USER_IDS.anna, targetType: 'VisitedPlace', targetId: 'visited-001', createdAt: isoDaysAgo(265) },
   { _id: 'like-003', userId: MOCK_CURRENT_USER_ID, targetType: 'VisitedPlace', targetId: 'visited-013', createdAt: isoDaysAgo(50) },

@@ -3,49 +3,37 @@
  * Импорт: import { mockUsers, getMockActivityFeed } from '@/mocks';
  */
 
-export { MOCK_CURRENT_USER_ID, MOCK_USER_IDS } from './ids';
-export * from './helpers';
+export { MOCK_CURRENT_USER_ID } from './ids';
 
 export { mockUsers, mockUsersWithStats } from './users';
 export { mockMedia } from './media';
 export { mockVisitedPlaceComments } from './visited-comments';
-export { mockGeoMarks } from './geo-marks';
 export { mockVisitedPlaces } from './visited-places';
-export { mockRoutes } from './routes';
 export {
-  mockLikes,
   getMockMyLikes,
   mockCreateLike,
   mockRemoveLike,
 } from './likes';
-export { mockWishlistPlaces } from './wishlist';
 export {
-  mockVisitedStatisticsByUser,
   mockPublicVisitedStatistics,
 } from './statistics';
 export {
-  mockActivityItems,
   mockRecommendedTags,
   getMockActivityFeed,
 } from './activity';
 export {
-  mockNotifications,
-  mockUnreadNotificationsCount,
   getMockNotifications,
   getMockUnreadNotificationsCount,
   mockMarkNotificationRead,
   mockMarkAllNotificationsRead,
 } from './notifications';
 export {
-  mockPosts,
   getMockPostsResponse,
   mockCreatePost,
   mockUpdatePost,
   mockRemovePost,
 } from './posts';
 export {
-  mockPublicEvents,
-  mockMyEvents,
   getMockPublicEvents,
   getMockMyEvents,
   mockCreateEvent,
@@ -54,13 +42,12 @@ export {
   mockRemoveEvent,
 } from './events';
 
-import type { UserWithStats, TravelRoute, VisitedPlace, GeoMark, WishlistPlace } from '@/types';
+import type { UserWithStats, TravelRoute, VisitedPlace, GeoMark } from '@/types';
 import { MOCK_CURRENT_USER_ID } from './ids';
 import { mockUsersWithStats } from './users';
 import { mockRoutes } from './routes';
 import { mockVisitedPlaces } from './visited-places';
 import { mockGeoMarks } from './geo-marks';
-import { mockWishlistPlaces } from './wishlist';
 import { mockVisitedStatisticsByUser } from './statistics';
 
 export function getMockUserById(id: string): UserWithStats | undefined {
@@ -85,7 +72,7 @@ export function getMockRouteById(id: string): TravelRoute | undefined {
   return mockRoutes.find((r) => r._id === id);
 }
 
-export function getMockVisitedByUser(userId: string): VisitedPlace[] {
+function getMockVisitedByUser(userId: string): VisitedPlace[] {
   return mockVisitedPlaces.filter((p) => p.userId === userId);
 }
 
@@ -93,16 +80,8 @@ export function getMockMyVisited(): VisitedPlace[] {
   return getMockVisitedByUser(MOCK_CURRENT_USER_ID);
 }
 
-export function getMockGeoMarksByAuthor(authorId: string): GeoMark[] {
-  return mockGeoMarks.filter((m) => m.authorId === authorId);
-}
-
 export function getMockMyGeoMarks(): GeoMark[] {
-  return getMockGeoMarksByAuthor(MOCK_CURRENT_USER_ID);
-}
-
-export function getMockMyWishlist(): WishlistPlace[] {
-  return mockWishlistPlaces.filter((w) => w.userId === MOCK_CURRENT_USER_ID);
+  return mockGeoMarks.filter((m) => m.authorId === MOCK_CURRENT_USER_ID);
 }
 
 export function getMockVisitedStatistics(userId = MOCK_CURRENT_USER_ID) {

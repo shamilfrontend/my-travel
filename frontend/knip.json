@@ -1,0 +1,6 @@
+{
+  "entry": ["src/router/index.ts"],
+  "project": ["src/**/*.{ts,vue}"],
+  "ignoreDependencies": ["sass"],
+  "vue": true
+}

@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:unused": "knip",
+    "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@vueuse/core": "^10.7.2",
     "axios": "^1.6.7",
     "d3-geo": "^3.1.1",
     "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
     "pinia": "^2.1.7",
     "topojson-client": "^3.1.0",
     "vue": "^3.4.15",
@@ -20,10 +23,12 @@
     "world-atlas": "^2.0.2"
   },
   "devDependencies": {
+    "@types/geojson": "^7946.0.16",
     "@types/leaflet": "^1.9.8",
     "@types/topojson-client": "^3.1.5",
     "@types/topojson-specification": "^1.0.5",
     "@vitejs/plugin-vue": "^5.0.3",
+    "knip": "^6.14.2",
     "sass": "^1.70.0",
     "typescript": "^5.3.3",
     "vite": "^5.0.12",

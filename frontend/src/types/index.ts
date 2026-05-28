@@ -159,16 +159,6 @@ export interface Post {
   updatedAt: string;
 }
 
-export interface WishlistPlace {
-  _id: string;
-  userId: string;
-  title: string;
-  coordinates: Coordinates;
-  note?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface TravelEvent {
   _id: string;
   organizerId: string | { _id: string; name: string; avatarUrl?: string };

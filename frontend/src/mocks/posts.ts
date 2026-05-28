@@ -7,7 +7,7 @@ function author(id: string, name: string) {
   return { _id: id, name, avatarUrl: avatarUrl(id.replace('user-', '')) };
 }
 
-export const mockPosts: Post[] = [
+const mockPosts: Post[] = [
   {
     _id: 'post-001',
     authorId: author(MOCK_CURRENT_USER_ID, 'Алексей Волков'),

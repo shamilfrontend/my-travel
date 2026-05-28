@@ -46,7 +46,7 @@ function userRef(id: string, name: string) {
   return { _id: id, name, avatarUrl: avatarUrl(id.replace('user-', '')) };
 }
 
-export const mockActivityItems: ActivityItem[] = [
+const mockActivityItems: ActivityItem[] = [
   {
     _id: 'activity-001',
     userId: userRef(MOCK_USER_IDS.sofia, 'София Романова'),

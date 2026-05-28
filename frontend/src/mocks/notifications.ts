@@ -6,7 +6,7 @@ function actor(id: string, name: string) {
   return { _id: id, name, avatarUrl: avatarUrl(id.replace('user-', '')) };
 }
 
-export const mockNotifications: AppNotification[] = [
+const mockNotifications: AppNotification[] = [
   {
     _id: 'notif-001',
     type: 'like',
@@ -67,8 +67,6 @@ export const mockNotifications: AppNotification[] = [
     createdAt: isoDaysAgo(32),
   },
 ];
-
-export const mockUnreadNotificationsCount = mockNotifications.filter((n) => !n.isRead).length;
 
 let runtimeNotifications: AppNotification[] = structuredClone(mockNotifications);
 

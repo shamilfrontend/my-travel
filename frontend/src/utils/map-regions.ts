@@ -1,4 +1,4 @@
-import { geoArea, geoContains } from 'd3-geo';
+import { geoContains } from 'd3-geo';
 import { feature } from 'topojson-client';
 import L from 'leaflet';
 import type { Feature, FeatureCollection, Geometry, Position } from 'geojson';
@@ -53,19 +53,10 @@ if (!russiaFeature) {
   throw new Error('Russia feature not found in world topology');
 }
 
-const russiaArea = geoArea(russiaFeature as Feature<Geometry>);
 let russiaBounds: L.LatLngBounds | null = null;
 
 export function getCountriesGeoJSON(): FeatureCollection<Geometry> {
   return countriesGeoJSON;
-}
-
-export function getRussiaFeature(): Feature<Geometry> {
-  return russiaFeature as Feature<Geometry>;
-}
-
-export function getRussiaArea(): number {
-  return russiaArea;
 }
 
 export function isPointInRussia(lat: number, lng: number): boolean {

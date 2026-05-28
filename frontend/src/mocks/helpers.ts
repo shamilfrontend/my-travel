@@ -109,7 +109,7 @@ export function mockMediaPath(
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
-export function stringHash(value: string): number {
+function stringHash(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
     hash = (hash << 5) - hash + value.charCodeAt(i);
