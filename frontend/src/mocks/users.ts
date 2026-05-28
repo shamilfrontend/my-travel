@@ -171,7 +171,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 47,
     countriesCount: 18,
     citiesCount: 32,
-    wishlistCount: 12,
     publicRoutesCount: 5,
   },
   {
@@ -187,7 +186,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 31,
     countriesCount: 12,
     citiesCount: 24,
-    wishlistCount: 8,
     publicRoutesCount: 3,
   },
   {
@@ -201,7 +199,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 22,
     countriesCount: 3,
     citiesCount: 19,
-    wishlistCount: 5,
     publicRoutesCount: 4,
   },
   {
@@ -216,7 +213,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 28,
     countriesCount: 9,
     citiesCount: 21,
-    wishlistCount: 6,
     publicRoutesCount: 2,
   },
   {
@@ -228,7 +224,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 19,
     countriesCount: 5,
     citiesCount: 14,
-    wishlistCount: 4,
     publicRoutesCount: 1,
   },
   {
@@ -241,7 +236,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 35,
     countriesCount: 15,
     citiesCount: 27,
-    wishlistCount: 10,
     publicRoutesCount: 6,
   },
   {
@@ -253,7 +247,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 16,
     countriesCount: 7,
     citiesCount: 11,
-    wishlistCount: 7,
     publicRoutesCount: 2,
   },
   {
@@ -266,7 +259,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 24,
     countriesCount: 11,
     citiesCount: 18,
-    wishlistCount: 9,
     publicRoutesCount: 3,
   },
   {
@@ -278,7 +270,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 14,
     countriesCount: 4,
     citiesCount: 10,
-    wishlistCount: 3,
     publicRoutesCount: 2,
   },
   {
@@ -291,7 +282,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 26,
     countriesCount: 6,
     citiesCount: 16,
-    wishlistCount: 11,
     publicRoutesCount: 4,
   },
   {
@@ -303,7 +293,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 18,
     countriesCount: 8,
     citiesCount: 13,
-    wishlistCount: 5,
     publicRoutesCount: 1,
   },
   {
@@ -316,7 +305,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 12,
     countriesCount: 5,
     citiesCount: 9,
-    wishlistCount: 14,
     publicRoutesCount: 0,
   },
 ];

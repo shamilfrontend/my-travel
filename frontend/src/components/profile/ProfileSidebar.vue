@@ -18,7 +18,6 @@ const mapStats = computed(() => [
   { label: 'Стран', value: props.profileStats?.countriesCount ?? 0 },
   { label: 'Городов', value: props.profileStats?.citiesCount ?? 0 },
   { label: 'Мест', value: props.profileStats?.visitedCount ?? 0 },
-  { label: 'Хочу', value: props.profileStats?.wishlistCount ?? 0 },
 ]);
 
 const interestIcons: Record<string, string> = {
@@ -142,7 +141,7 @@ function getIcon(interest: string): string {
 
 .map-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
 }
 

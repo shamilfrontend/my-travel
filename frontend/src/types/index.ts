@@ -99,7 +99,6 @@ export interface UserWithStats {
   visitedCount: number;
   countriesCount: number;
   citiesCount?: number;
-  wishlistCount?: number;
   publicRoutesCount?: number;
 }
 
