@@ -1,0 +1,14 @@
+{
+  "name": "ppr-travel",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"yarn dev:backend\" \"yarn dev:frontend\"",
+    "dev:backend": "cd backend && yarn dev",
+    "dev:frontend": "cd frontend && yarn dev",
+    "build": "cd backend && yarn build && cd ../frontend && yarn build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

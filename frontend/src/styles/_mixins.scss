@@ -1,0 +1,90 @@
+@use 'variables' as *;
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin card {
+  background: white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow;
+  padding: 1.5rem;
+}
+
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: $radius;
+  font-size: $font-size-base;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all $transition;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+@mixin button-primary {
+  @include button-base;
+  background: $primary;
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: $primary-dark;
+  }
+}
+
+@mixin button-secondary {
+  @include button-base;
+  background: $gray-100;
+  color: $gray-700;
+
+  &:hover:not(:disabled) {
+    background: $gray-200;
+  }
+}
+
+@mixin input-base {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid $gray-300;
+  border-radius: $radius;
+  font-size: $font-size-base;
+  transition: border-color $transition;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+
+  &::placeholder {
+    color: $gray-400;
+  }
+}
+
+@mixin mobile {
+  @media (max-width: 768px) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: 1024px) {
+    @content;
+  }
+}
