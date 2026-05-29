@@ -12,21 +12,6 @@ export interface MapTileLayerOptions extends TileLayerOptions {
   onReady?: () => void;
 }
 
-interface MaptilerLayerSync extends Layer {
-  _update?: () => void;
-}
-
-export function syncMapTileLayer(layer: Layer | undefined, map: LeafletMap): void {
-  if (!layer) return;
-
-  const maptilerLayer = layer as MaptilerLayerSync;
-  if (typeof maptilerLayer._update === 'function') {
-    maptilerLayer._update();
-  }
-
-  map.invalidateSize({ animate: false });
-}
-
 function warnMissingMapTilerKey() {
   if (MAPTILER_API_KEY || !import.meta.env.DEV) return;
 

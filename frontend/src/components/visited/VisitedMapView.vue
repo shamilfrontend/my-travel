@@ -12,8 +12,7 @@ import VisitedPlaceForm from '@/components/visited/VisitedPlaceForm.vue';
 import LikeButton from '@/components/likes/LikeButton.vue';
 import MediaGallery from '@/components/media/MediaGallery.vue';
 import MediaUploader from '@/components/media/MediaUploader.vue';
-import { addMapTileLayer, syncMapTileLayer } from '@/config/map-tiles';
-import type { Layer } from 'leaflet';
+import { addMapTileLayer } from '@/config/map-tiles';
 import { ACTIVE_MAP_POLICY } from '@/config/map-policy';
 import {
   getCountryDisplayName,
@@ -23,6 +22,7 @@ import { USE_MOCKS } from '@/config/useMocks';
 import { mockVisitedPlaceComments } from '@/mocks';
 import {
   getCountriesGeoJSON,
+  getRussiaBounds,
   isPointInRussia,
   type MapRegion,
 } from '@/utils/map-regions';
@@ -43,7 +43,6 @@ const authStore = useAuthStore();
 
 const mapContainer = ref<HTMLDivElement>();
 const mapInstance = ref<L.Map>();
-const mapTileLayer = ref<Layer>();
 const markersLayer = ref<L.FeatureGroup>();
 const countriesLayer = ref<L.GeoJSON>();
 const hasAppliedInitialViewport = ref(false);
@@ -171,8 +170,6 @@ const rawGeoJSON = getCountriesGeoJSON();
 const countriesGeoJSON = rawGeoJSON;
 const DEFAULT_MAP_CENTER: L.LatLngExpression = [26.947978976023382, 10.994881808870337];
 const DEFAULT_WORLD_ZOOM = 2.5;
-const RUSSIA_MAP_CENTER: L.LatLngExpression = [61.5, 96.0];
-const RUSSIA_MAP_ZOOM = 4;
 const COUNTRIES_PANE = 'countriesPane';
 const countryDisplayOverrides = getCountryDisplayOverrides(ACTIVE_MAP_POLICY);
 const NUMERIC_TO_ALPHA2 = Object.entries(ALPHA2_TO_NUMERIC).reduce<Record<string, string>>(
@@ -250,13 +247,8 @@ function scheduleMapOverlaysRefresh() {
     if (!mapInstance.value) return;
     setupMapPanes();
     refreshMapOverlays();
-    syncMapView();
+    mapInstance.value.invalidateSize({ animate: false });
   }, 0);
-}
-
-function syncMapView() {
-  if (!mapInstance.value) return;
-  syncMapTileLayer(mapTileLayer.value, mapInstance.value);
 }
 
 function onMapBaseReady() {
@@ -361,13 +353,16 @@ function applyMapViewport(onSettled?: () => void) {
   }
 
   const finishViewportChange = () => {
-    syncMapView();
     onSettled?.();
   };
 
   if (props.region === 'russia') {
     mapInstance.value.once('moveend', finishViewportChange);
-    mapInstance.value.setView(RUSSIA_MAP_CENTER, RUSSIA_MAP_ZOOM, { animate: false });
+    mapInstance.value.fitBounds(getRussiaBounds(), {
+      padding: [24, 24],
+      maxZoom: 6,
+      animate: false,
+    });
     return;
   }
 
@@ -427,15 +422,11 @@ onMounted(async () => {
 
   mapInstance.value = L.map(mapContainer.value).setView(DEFAULT_MAP_CENTER, getInitialWorldZoom());
 
-  mapTileLayer.value = addMapTileLayer(mapInstance.value, {
+  addMapTileLayer(mapInstance.value, {
     onReady: onMapBaseReady,
   });
 
   mapInstance.value.whenReady(onMapBaseReady);
-
-  mapInstance.value.on('zoomend moveend', () => {
-    syncMapView();
-  });
 
   mapInstance.value.on('click', (event: L.LeafletMouseEvent) => {
     formCoords.value = { lat: event.latlng.lat, lng: event.latlng.lng };
