@@ -12,4 +12,4 @@ function isMapPolicy(value: string): value is MapPolicy {
 const envPolicy = import.meta.env.VITE_MAP_POLICY as string | undefined;
 
 export const ACTIVE_MAP_POLICY: MapPolicy =
-  envPolicy && isMapPolicy(envPolicy) ? envPolicy : MAP_POLICIES.INTERNATIONAL;
+  envPolicy && isMapPolicy(envPolicy) ? envPolicy : MAP_POLICIES.RU_LOCALIZED;

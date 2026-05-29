@@ -3,9 +3,6 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet.markercluster';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { useVisitedStore } from '@/stores/visited';
 import { useAuthStore } from '@/stores/auth';
 import type { Coordinates, Like, VisitedPlace, Media } from '@/types';
@@ -15,14 +12,17 @@ import VisitedPlaceForm from '@/components/visited/VisitedPlaceForm.vue';
 import LikeButton from '@/components/likes/LikeButton.vue';
 import MediaGallery from '@/components/media/MediaGallery.vue';
 import MediaUploader from '@/components/media/MediaUploader.vue';
-import { addMapTileLayer } from '@/config/map-tiles';
+import { addMapTileLayer, syncMapTileLayer } from '@/config/map-tiles';
+import type { Layer } from 'leaflet';
 import { ACTIVE_MAP_POLICY } from '@/config/map-policy';
-import { getCountryDisplayOverrides } from '@/config/country-display-overrides';
+import {
+  getCountryDisplayName,
+  getCountryDisplayOverrides,
+} from '@/config/country-display-overrides';
 import { USE_MOCKS } from '@/config/useMocks';
 import { mockVisitedPlaceComments } from '@/mocks';
 import {
   getCountriesGeoJSON,
-  getRussiaBounds,
   isPointInRussia,
   type MapRegion,
 } from '@/utils/map-regions';
@@ -43,8 +43,10 @@ const authStore = useAuthStore();
 
 const mapContainer = ref<HTMLDivElement>();
 const mapInstance = ref<L.Map>();
-const markersLayer = ref<L.MarkerClusterGroup>();
+const mapTileLayer = ref<Layer>();
+const markersLayer = ref<L.FeatureGroup>();
 const countriesLayer = ref<L.GeoJSON>();
+const hasAppliedInitialViewport = ref(false);
 
 const showForm = ref(false);
 const formCoords = ref<Coordinates>({ lat: 0, lng: 0 });
@@ -169,6 +171,9 @@ const rawGeoJSON = getCountriesGeoJSON();
 const countriesGeoJSON = rawGeoJSON;
 const DEFAULT_MAP_CENTER: L.LatLngExpression = [26.947978976023382, 10.994881808870337];
 const DEFAULT_WORLD_ZOOM = 2.5;
+const RUSSIA_MAP_CENTER: L.LatLngExpression = [61.5, 96.0];
+const RUSSIA_MAP_ZOOM = 4;
+const COUNTRIES_PANE = 'countriesPane';
 const countryDisplayOverrides = getCountryDisplayOverrides(ACTIVE_MAP_POLICY);
 const NUMERIC_TO_ALPHA2 = Object.entries(ALPHA2_TO_NUMERIC).reduce<Record<string, string>>(
   (acc, [alpha2, numeric]) => {
@@ -201,7 +206,69 @@ function getVisitedNumericIds(): Set<string> {
 function getDisplayCountryName(numericId: string, fallbackName: string): string {
   const alpha2 = NUMERIC_TO_ALPHA2[numericId];
   if (!alpha2) return fallbackName;
-  return countryDisplayOverrides.displayNameOverrides[alpha2] || fallbackName;
+  return getCountryDisplayName(alpha2, fallbackName, ACTIVE_MAP_POLICY);
+}
+
+function setupMapPanes() {
+  if (!mapInstance.value) return;
+
+  if (!mapInstance.value.getPane(COUNTRIES_PANE)) {
+    mapInstance.value.createPane(COUNTRIES_PANE);
+    mapInstance.value.getPane(COUNTRIES_PANE)!.style.zIndex = '450';
+  }
+
+  const markerPane = mapInstance.value.getPane('markerPane');
+  if (markerPane) {
+    markerPane.style.zIndex = '650';
+  }
+}
+
+function initMarkersLayer() {
+  if (!mapInstance.value) return;
+
+  if (markersLayer.value) {
+    mapInstance.value.removeLayer(markersLayer.value);
+  }
+
+  markersLayer.value = L.featureGroup().addTo(mapInstance.value);
+}
+
+function refreshMapOverlays() {
+  if (!mapInstance.value) return;
+
+  renderCountries();
+
+  if (!markersLayer.value) {
+    initMarkersLayer();
+  }
+
+  renderMarkers();
+}
+
+function scheduleMapOverlaysRefresh() {
+  window.setTimeout(() => {
+    if (!mapInstance.value) return;
+    setupMapPanes();
+    refreshMapOverlays();
+    syncMapView();
+  }, 0);
+}
+
+function syncMapView() {
+  if (!mapInstance.value) return;
+  syncMapTileLayer(mapTileLayer.value, mapInstance.value);
+}
+
+function onMapBaseReady() {
+  if (!mapInstance.value) return;
+
+  if (!hasAppliedInitialViewport.value) {
+    hasAppliedInitialViewport.value = true;
+    applyMapViewportAndRefresh();
+    return;
+  }
+
+  scheduleMapOverlaysRefresh();
 }
 
 function renderCountries() {
@@ -217,6 +284,7 @@ function renderCountries() {
   const visitedIds = getVisitedNumericIds();
 
   countriesLayer.value = L.geoJSON(countriesGeoJSON, {
+    pane: COUNTRIES_PANE,
     style: (feat) => {
       const id = feat?.id?.toString() ?? '';
       const isVisited = visitedIds.has(id);
@@ -244,8 +312,6 @@ function renderCountries() {
       }
     },
   }).addTo(mapInstance.value);
-
-  countriesLayer.value.bringToBack();
 }
 
 function isOwnPlace(place: VisitedPlace): boolean {
@@ -288,35 +354,45 @@ function getInitialWorldZoom(): number {
   return !isNaN(qZoom) ? qZoom : DEFAULT_WORLD_ZOOM;
 }
 
-function applyMapViewport() {
-  if (!mapInstance.value) return;
-
-  if (props.region === 'russia') {
-    mapInstance.value.fitBounds(getRussiaBounds(), {
-      padding: [24, 24],
-      maxZoom: 6,
-    });
-
-    const mapHeight = mapInstance.value.getSize().y;
-    mapInstance.value.panBy([0, Math.round(mapHeight * 0.2)], { animate: false });
+function applyMapViewport(onSettled?: () => void) {
+  if (!mapInstance.value) {
+    onSettled?.();
     return;
   }
 
-  mapInstance.value.setView(DEFAULT_MAP_CENTER, getInitialWorldZoom());
+  const finishViewportChange = () => {
+    syncMapView();
+    onSettled?.();
+  };
+
+  if (props.region === 'russia') {
+    mapInstance.value.once('moveend', finishViewportChange);
+    mapInstance.value.setView(RUSSIA_MAP_CENTER, RUSSIA_MAP_ZOOM, { animate: false });
+    return;
+  }
+
+  mapInstance.value.setView(DEFAULT_MAP_CENTER, getInitialWorldZoom(), { animate: false });
+  finishViewportChange();
+}
+
+function applyMapViewportAndRefresh() {
+  applyMapViewport(() => {
+    refreshMapOverlays();
+  });
 }
 
 watch(
   () => visitedStore.displayStatistics?.countryCodes,
   () => {
     if (props.region === 'world') {
-      renderCountries();
+      refreshMapOverlays();
     }
   },
 );
 
 watch(
   () => visitedStore.displayPlaces,
-  () => renderMarkers(),
+  () => refreshMapOverlays(),
   { deep: true },
 );
 
@@ -325,15 +401,14 @@ watch(
   (newMode) => {
     visitedStore.setMode(newMode);
     closeAllPanels();
+    refreshMapOverlays();
   },
 );
 
 watch(
   () => props.region,
   () => {
-    applyMapViewport();
-    renderCountries();
-    renderMarkers();
+    applyMapViewportAndRefresh();
     closeAllPanels();
   },
 );
@@ -351,20 +426,16 @@ onMounted(async () => {
   if (!mapContainer.value) return;
 
   mapInstance.value = L.map(mapContainer.value).setView(DEFAULT_MAP_CENTER, getInitialWorldZoom());
-  addMapTileLayer(mapInstance.value);
-  markersLayer.value = L.markerClusterGroup({
-    showCoverageOnHover: false,
-    spiderfyOnMaxZoom: true,
-    // Keep marker positions visually stable during zoom transitions.
-    animate: false,
-    animateAddingMarkers: false,
-    disableClusteringAtZoom: 7,
-    maxClusterRadius: 45,
-    removeOutsideVisibleBounds: false,
-  }).addTo(mapInstance.value);
 
-  applyMapViewport();
-  renderCountries();
+  mapTileLayer.value = addMapTileLayer(mapInstance.value, {
+    onReady: onMapBaseReady,
+  });
+
+  mapInstance.value.whenReady(onMapBaseReady);
+
+  mapInstance.value.on('zoomend moveend', () => {
+    syncMapView();
+  });
 
   mapInstance.value.on('click', (event: L.LeafletMouseEvent) => {
     formCoords.value = { lat: event.latlng.lat, lng: event.latlng.lng };
@@ -372,8 +443,6 @@ onMounted(async () => {
     showEditPanel.value = false;
     selectedPlace.value = null;
   });
-
-  renderMarkers();
 });
 
 function openEditPanel(place: VisitedPlace) {

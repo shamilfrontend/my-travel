@@ -45,29 +45,31 @@ const topology = worldTopology as unknown as Topology<{ countries: GeometryColle
 const rawGeoJSON = feature(topology, topology.objects.countries) as FeatureCollection<Geometry>;
 const countriesGeoJSON = fixAntimeridian(rawGeoJSON);
 
-const russiaFeature = countriesGeoJSON.features.find(
+const rawRussiaFeature = rawGeoJSON.features.find(
   (countryFeature) => Number(countryFeature.id) === RUSSIA_NUMERIC_ID,
 );
 
-if (!russiaFeature) {
+if (!rawRussiaFeature) {
   throw new Error('Russia feature not found in world topology');
 }
 
-let russiaBounds: L.LatLngBounds | null = null;
+// WGS84 bounds for viewport fitting. Do not derive from antimeridian-shifted GeoJSON:
+// shifted geometry can exceed 180° longitude and desync Leaflet markers from MapTiler tiles.
+const RUSSIA_VIEW_BOUNDS = L.latLngBounds(
+  [41.2, 19.4],
+  [81.9, 169.0],
+);
 
 export function getCountriesGeoJSON(): FeatureCollection<Geometry> {
   return countriesGeoJSON;
 }
 
 export function isPointInRussia(lat: number, lng: number): boolean {
-  return geoContains(russiaFeature as Feature<Geometry>, [lng, lat]);
+  return geoContains(rawRussiaFeature as Feature<Geometry>, [lng, lat]);
 }
 
 export function getRussiaBounds(): L.LatLngBounds {
-  if (!russiaBounds) {
-    russiaBounds = L.geoJSON(russiaFeature as Feature<Geometry>).getBounds();
-  }
-  return russiaBounds;
+  return RUSSIA_VIEW_BOUNDS;
 }
 
 export function normalizeMapRegion(value: unknown): MapRegion {
