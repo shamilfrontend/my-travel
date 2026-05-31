@@ -171,7 +171,7 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 47,
     countriesCount: 18,
     citiesCount: 32,
-    routesCount: 4,
+    routesCount: 5,
   },
   {
     _id: MOCK_USER_IDS.maria,

@@ -133,6 +133,14 @@ onBeforeUnmount(() => {
 <template>
   <div class="route-detail">
 		<div class="container">
+			<nav class="route-breadcrumbs" aria-label="Навигация">
+				<router-link to="/routes">Маршруты</router-link>
+				<template v-if="travelRoute">
+					<span class="separator" aria-hidden="true">/</span>
+					<span class="current">{{ travelRoute.name }}</span>
+				</template>
+			</nav>
+
 			<div v-if="isLoading" class="route-loading">
 				<div class="loading-spinner" />
 				<p>Загрузка маршрута...</p>
@@ -186,6 +194,33 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
+.route-breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 1.5rem 0 0;
+  font-size: $font-size-sm;
+
+  a {
+    color: $gray-500;
+    text-decoration: none;
+
+    &:hover {
+      color: $primary;
+    }
+  }
+
+  .separator {
+    color: $gray-300;
+  }
+
+  .current {
+    color: $gray-700;
+    font-weight: 500;
+  }
+}
+
 .route-layout {
   display: grid;
   grid-template-columns: 1fr 480px;

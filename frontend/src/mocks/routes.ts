@@ -243,4 +243,45 @@ export const mockRoutes: TravelRoute[] = [
     createdAt: isoDaysAgo(3),
     updatedAt: isoDaysAgo(3),
   },
+  {
+    _id: 'route-017',
+    name: 'Лайтовый тур по Дагестану',
+    description: '4-дневный автомобильный маршрут: Махачкала, каньоны, горные водопады и Дербент',
+    authorId: MOCK_USER_IDS.alexey,
+    author: authorRef(MOCK_USER_IDS.alexey, 'Алина Гарифуллина'),
+    days: [
+      {
+        title: 'День 1',
+        geoMarkIds: ['mark-061', 'mark-043', 'mark-062', 'mark-042', 'mark-045'],
+      },
+      {
+        title: 'День 2',
+        geoMarkIds: ['mark-035', 'mark-033', 'mark-034', 'mark-063', 'mark-064'],
+      },
+      {
+        title: 'День 3',
+        geoMarkIds: ['mark-065', 'mark-066', 'mark-067', 'mark-068', 'mark-069', 'mark-070'],
+      },
+      {
+        title: 'День 4',
+        geoMarkIds: ['mark-071', 'mark-072', 'mark-073'],
+      },
+    ],
+    geoMarkIds: [
+      'mark-061', 'mark-043', 'mark-062', 'mark-042', 'mark-045',
+      'mark-035', 'mark-033', 'mark-034', 'mark-063', 'mark-064',
+      'mark-065', 'mark-066', 'mark-067', 'mark-068', 'mark-069', 'mark-070',
+      'mark-071', 'mark-072', 'mark-073',
+    ],
+    geoMarks: resolveMarks([
+      'mark-061', 'mark-043', 'mark-062', 'mark-042', 'mark-045',
+      'mark-035', 'mark-033', 'mark-034', 'mark-063', 'mark-064',
+      'mark-065', 'mark-066', 'mark-067', 'mark-068', 'mark-069', 'mark-070',
+      'mark-071', 'mark-072', 'mark-073',
+    ]),
+    distanceKm: 445.0,
+    copyCount: 0,
+    createdAt: isoDaysAgo(1),
+    updatedAt: isoDaysAgo(1),
+  },
 ];
