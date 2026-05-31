@@ -1,11 +1,14 @@
 import api from './api';
-import type { UserWithStats, TravelRoute } from '@/types';
+import type { UserWithStats, TravelRoute, VisitedPlace, VisitedStatistics } from '@/types';
 import { USE_MOCKS, mockDelay } from '@/config/useMocks';
 import {
   getMockUserById,
   getMockRoutesByAuthor,
+  getMockVisitedByUser,
+  getMockVisitedStatistics,
   mockUsersWithStats,
 } from '@/mocks';
+import { buildStatsFromPlaces } from '@/utils/visited-statistics';
 
 export const usersApi = {
   async getAll(): Promise<UserWithStats[]> {
@@ -30,10 +33,30 @@ export const usersApi = {
 
   async getUserRoutes(id: string): Promise<TravelRoute[]> {
     if (USE_MOCKS) {
-      return mockDelay(getMockRoutesByAuthor(id, true));
+      return mockDelay(getMockRoutesByAuthor(id));
     }
 
     const { data } = await api.get<TravelRoute[]>(`/users/${id}/routes`);
+    return data;
+  },
+
+  async getUserPlaces(id: string): Promise<VisitedPlace[]> {
+    if (USE_MOCKS) {
+      return mockDelay(getMockVisitedByUser(id));
+    }
+
+    const { data } = await api.get<VisitedPlace[]>(`/users/${id}/places`);
+    return data;
+  },
+
+  async getUserStatistics(id: string): Promise<VisitedStatistics> {
+    if (USE_MOCKS) {
+      const stats = getMockVisitedStatistics(id);
+      if (stats) return mockDelay(stats);
+      return mockDelay(buildStatsFromPlaces(getMockVisitedByUser(id)));
+    }
+
+    const { data } = await api.get<VisitedStatistics>(`/users/${id}/statistics`);
     return data;
   },
 };

@@ -35,44 +35,21 @@ watch(
       loadedMedia.value = [];
       return;
     }
-    const results: Media[] = [];
-    for (const id of ids) {
-      const alreadyLoaded = loadedMedia.value.find((m) => m._id === id);
-      if (alreadyLoaded) {
-        results.push(alreadyLoaded);
-      } else if (USE_MOCKS) {
-        const mockItem = mockMedia.find((item) => item._id === id);
-        if (mockItem) {
-          results.push(mockItem);
-          continue;
+
+    const results = await Promise.all(
+      ids.map(async (id) => {
+        const cached = loadedMedia.value.find((item) => item._id === id);
+        if (cached) return cached;
+
+        if (USE_MOCKS) {
+          return mockMedia.find((item) => item._id === id) ?? null;
         }
 
-        results.push({
-          _id: id,
-          originalName: '',
-          mimeType: 'image/jpeg',
-          size: 0,
-          path: '',
-          thumbnailPath: '',
-          type: 'image',
-          ownerId: '',
-          createdAt: '',
-        });
-      } else {
-        results.push({
-          _id: id,
-          originalName: '',
-          mimeType: 'image/jpeg',
-          size: 0,
-          path: '',
-          thumbnailPath: '',
-          type: 'image',
-          ownerId: '',
-          createdAt: '',
-        });
-      }
-    }
-    loadedMedia.value = results;
+        return mediaApi.getById(id);
+      }),
+    );
+
+    loadedMedia.value = results.filter((item): item is Media => item !== null);
   },
   { immediate: true },
 );

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import type { VisitedPlace, VisitedStatistics } from '@/types';
 import { visitedApi } from '@/services/visitedApi';
 import type { CreateVisitedPayload, UpdateVisitedPayload } from '@/services/visitedApi';
+import { buildStatsFromPlaces } from '@/utils/visited-statistics';
 
 export const useVisitedStore = defineStore('visited', () => {
   const places = ref<VisitedPlace[]>([]);
@@ -12,17 +13,27 @@ export const useVisitedStore = defineStore('visited', () => {
   const allStatistics = ref<VisitedStatistics | null>(null);
 
   const mode = ref<'all' | 'my'>('all');
+  const filterUserId = ref<string | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
   const selectedYear = ref<number | undefined>(undefined);
 
-  const displayPlaces = computed(() =>
-    mode.value === 'all' ? allPlaces.value : places.value,
-  );
+  const filteredUserPlaces = computed(() => {
+    if (!filterUserId.value) return allPlaces.value;
+    return allPlaces.value.filter((place) => place.userId === filterUserId.value);
+  });
 
-  const displayStatistics = computed(() =>
-    mode.value === 'all' ? allStatistics.value : statistics.value,
-  );
+  const displayPlaces = computed(() => {
+    if (mode.value === 'my') return places.value;
+    if (filterUserId.value) return filteredUserPlaces.value;
+    return allPlaces.value;
+  });
+
+  const displayStatistics = computed(() => {
+    if (mode.value === 'my') return statistics.value;
+    if (filterUserId.value) return buildStatsFromPlaces(filteredUserPlaces.value);
+    return allStatistics.value;
+  });
 
   async function fetchPlaces(year?: number) {
     isLoading.value = true;
@@ -88,6 +99,13 @@ export const useVisitedStore = defineStore('visited', () => {
 
   function setMode(newMode: 'all' | 'my') {
     mode.value = newMode;
+    if (newMode === 'my') {
+      filterUserId.value = null;
+    }
+  }
+
+  function setFilterUserId(userId: string | null) {
+    filterUserId.value = userId;
   }
 
   function filterByYear(year?: number) {
@@ -109,10 +127,10 @@ export const useVisitedStore = defineStore('visited', () => {
 
   return {
     places, statistics, allPlaces, allStatistics,
-    mode, displayPlaces, displayStatistics,
+    mode, filterUserId, displayPlaces, displayStatistics,
     isLoading, error, selectedYear,
     fetchPlaces, fetchStatistics, fetchAllPlaces, fetchAllStatistics,
     addPlace, updatePlace, deletePlace,
-    setMode, filterByYear, loadAll,
+    setMode, setFilterUserId, filterByYear, loadAll,
   };
 });

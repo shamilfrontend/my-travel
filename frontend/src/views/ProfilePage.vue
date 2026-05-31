@@ -6,10 +6,9 @@ import { useVisitedStore } from '@/stores/visited';
 import { useRoutesStore } from '@/stores/routes';
 import { usePostsStore } from '@/stores/posts';
 import { usersApi } from '@/services/usersApi';
-import { eventsApi } from '@/services/eventsApi';
 import ProfileSidebar from '@/components/profile/ProfileSidebar.vue';
 import { getUserInitials } from '@/utils/user-initials';
-import type { UserWithStats, TravelEvent } from '@/types';
+import type { UserWithStats } from '@/types';
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -20,17 +19,8 @@ const postsStore = usePostsStore();
 const activeTab = ref('travels');
 const profileStats = ref<UserWithStats | null>(null);
 const isLoadingProfile = ref(true);
-const myEvents = ref<TravelEvent[]>([]);
 const newPostText = ref('');
 const isCreatingPost = ref(false);
-const highlightedPostId = computed(() => {
-  const value = route.query.postId;
-  return typeof value === 'string' ? value : '';
-});
-const highlightedEventId = computed(() => {
-  const value = route.query.eventId;
-  return typeof value === 'string' ? value : '';
-});
 
 const showEditForm = ref(false);
 const editName = ref('');
@@ -41,10 +31,9 @@ const editInterests = ref('');
 const isSaving = ref(false);
 
 const tabs = computed(() => [
-  { key: 'travels', label: 'Путешествия', count: profileStats.value?.visitedCount ?? 0 },
-  { key: 'routes', label: 'Маршруты', count: profileStats.value?.publicRoutesCount ?? routesStore.myRoutes.length },
+  { key: 'travels', label: 'Метки', count: profileStats.value?.visitedCount ?? 0 },
+  { key: 'routes', label: 'Маршруты', count: profileStats.value?.routesCount ?? routesStore.myRoutes.length },
   { key: 'posts', label: 'Посты', count: postsStore.posts.length },
-  { key: 'events', label: 'События', count: myEvents.value.length },
 ]);
 
 const avatarUrl = computed(() => authStore.user?.avatarUrl || null);
@@ -117,29 +106,22 @@ onMounted(async () => {
   if (
     queryTab === 'travels' ||
     queryTab === 'routes' ||
-    queryTab === 'posts' ||
-    queryTab === 'events'
+    queryTab === 'posts'
   ) {
     activeTab.value = queryTab;
-  } else if (highlightedPostId.value) {
-    activeTab.value = 'posts';
-  } else if (highlightedEventId.value) {
-    activeTab.value = 'events';
   }
 
   isLoadingProfile.value = true;
   try {
     if (authStore.user?._id) {
-      const [stats, events] = await Promise.all([
+      const [stats] = await Promise.all([
         usersApi.getById(authStore.user._id),
-        eventsApi.getMine(),
         visitedStore.fetchStatistics(),
         routesStore.fetchMyRoutes(),
         visitedStore.fetchPlaces(),
         postsStore.fetchPosts(authStore.user._id),
       ]);
       profileStats.value = stats;
-      myEvents.value = events;
     }
   } finally {
     isLoadingProfile.value = false;
@@ -281,8 +263,12 @@ onMounted(async () => {
 								<h4>{{ place.title }}</h4>
 								<span v-if="place.note" class="mini-meta">{{ place.note }}</span>
 							</div>
-							<router-link v-if="visitedStore.places.length > 6" to="/map" class="view-all-link">
-								Все места ({{ visitedStore.places.length }}) &rarr;
+							<router-link
+								v-if="visitedStore.places.length > 0"
+								to="/map?tab=my"
+								class="view-all-link"
+							>
+								Все метки ({{ visitedStore.places.length }}) &rarr;
 							</router-link>
 						</div>
 					</div>
@@ -313,32 +299,15 @@ onMounted(async () => {
 							<p>Постов пока нет</p>
 						</div>
 						<div v-else class="posts-list">
-							<div
+							<router-link
 								v-for="post in postsStore.posts"
 								:key="post._id"
-								:class="['post-card', { highlighted: post._id === highlightedPostId }]"
+								:to="`/posts/${post._id}`"
+								class="post-card"
 							>
 								<p>{{ post.text }}</p>
 								<span class="post-date">{{ new Date(post.createdAt).toLocaleDateString('ru-RU') }}</span>
-							</div>
-						</div>
-					</div>
-
-					<div v-else-if="activeTab === 'events'" class="events-tab">
-						<div v-if="myEvents.length === 0" class="empty-tab">
-							<p>Событий пока нет</p>
-							<router-link to="/events" class="btn-secondary btn-sm">Создать событие</router-link>
-						</div>
-						<div v-else class="events-list">
-							<div
-								v-for="event in myEvents"
-								:key="event._id"
-								:class="['event-card', { highlighted: event._id === highlightedEventId }]"
-							>
-								<h4>{{ event.title }}</h4>
-								<p v-if="event.location">{{ event.location }}</p>
-								<span class="event-date">{{ new Date(event.startDate).toLocaleDateString('ru-RU') }}</span>
-							</div>
+							</router-link>
 						</div>
 					</div>
 				</div>
@@ -726,30 +695,29 @@ onMounted(async () => {
   resize: vertical;
 }
 
-.posts-list,
-.events-list {
+.posts-list {
   display: grid;
   gap: 1rem;
 }
 
-.post-card,
-.event-card {
+.post-card {
   @include card;
   padding: 1rem;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow $transition;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
 
   h4 {
     margin: 0 0 0.5rem;
   }
 }
 
-.post-card.highlighted,
-.event-card.highlighted {
-  border: 1px solid $primary;
-  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.16);
-}
-
-.post-date,
-.event-date {
+.post-date {
   font-size: 0.75rem;
   color: $gray-400;
 }

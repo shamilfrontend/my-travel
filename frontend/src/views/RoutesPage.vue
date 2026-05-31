@@ -10,14 +10,14 @@ import RouteEditor from '@/components/routes/RouteEditor.vue';
 const route = useRoute();
 const routesStore = useRoutesStore();
 const mapStore = useMapStore();
-const activeTab = ref<'my' | 'public'>('my');
-const publicSort = ref<'recent' | 'popular'>('recent');
+const activeTab = ref<'my' | 'community'>('my');
+const communitySort = ref<'recent' | 'popular'>('recent');
 const showEditor = ref(false);
 const editingRoute = ref<TravelRoute | null>(null);
 
 onMounted(async () => {
   routesStore.fetchMyRoutes();
-  routesStore.fetchPublicRoutes();
+  routesStore.fetchCommunityRoutes();
   if (route.query.new === '1') {
     await ensureMarksLoaded();
     editingRoute.value = null;
@@ -25,8 +25,8 @@ onMounted(async () => {
   }
 });
 
-watch(publicSort, (sort) => {
-  routesStore.fetchPublicRoutes(sort);
+watch(communitySort, (sort) => {
+  routesStore.fetchCommunityRoutes(sort);
 });
 
 async function ensureMarksLoaded() {
@@ -77,16 +77,16 @@ function handleRouteUpdated() {
 
     <div class="tabs">
       <button :class="['tab', { active: activeTab === 'my' }]" @click="activeTab = 'my'">Мои</button>
-      <button :class="['tab', { active: activeTab === 'public' }]" @click="activeTab = 'public'">Публичные</button>
+      <button :class="['tab', { active: activeTab === 'community' }]" @click="activeTab = 'community'">Сообщество</button>
     </div>
 
-    <div v-if="activeTab === 'public'" class="sort-bar">
-      <button :class="['sort-btn', { active: publicSort === 'recent' }]" @click="publicSort = 'recent'">Новые</button>
-      <button :class="['sort-btn', { active: publicSort === 'popular' }]" @click="publicSort = 'popular'">Популярные</button>
+    <div v-if="activeTab === 'community'" class="sort-bar">
+      <button :class="['sort-btn', { active: communitySort === 'recent' }]" @click="communitySort = 'recent'">Новые</button>
+      <button :class="['sort-btn', { active: communitySort === 'popular' }]" @click="communitySort = 'popular'">Популярные</button>
     </div>
 
     <RouteList v-if="activeTab === 'my'" :routes="routesStore.myRoutes" :show-actions="true" @edit="openEditRoute" />
-    <RouteList v-else :routes="routesStore.publicRoutes" :show-copy="true" />
+    <RouteList v-else :routes="routesStore.communityRoutes" :show-copy="true" />
   </div>
 </template>
 

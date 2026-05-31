@@ -6,7 +6,7 @@ import type { CreateRoutePayload, UpdateRoutePayload } from '@/services/routeApi
 
 export const useRoutesStore = defineStore('routes', () => {
   const myRoutes = ref<TravelRoute[]>([]);
-  const publicRoutes = ref<TravelRoute[]>([]);
+  const communityRoutes = ref<TravelRoute[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
@@ -22,13 +22,13 @@ export const useRoutesStore = defineStore('routes', () => {
     }
   }
 
-  async function fetchPublicRoutes(sort?: 'recent' | 'popular') {
+  async function fetchCommunityRoutes(sort?: 'recent' | 'popular') {
     isLoading.value = true;
     error.value = null;
     try {
-      publicRoutes.value = await routeApi.getPublic(sort);
+      communityRoutes.value = await routeApi.getCommunity(sort);
     } catch {
-      error.value = 'Не удалось загрузить публичные маршруты';
+      error.value = 'Не удалось загрузить маршруты сообщества';
     } finally {
       isLoading.value = false;
     }
@@ -64,11 +64,11 @@ export const useRoutesStore = defineStore('routes', () => {
 
   return {
     myRoutes,
-    publicRoutes,
+    communityRoutes,
     isLoading,
     error,
     fetchMyRoutes,
-    fetchPublicRoutes,
+    fetchCommunityRoutes,
     fetchRouteById,
     createRoute,
     updateRoute,

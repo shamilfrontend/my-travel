@@ -1,3 +1,3 @@
-import worldTopology from 'world-atlas/countries-50m.json';
+import worldTopology from 'world-atlas/countries-110m.json';
 
 export default worldTopology;

@@ -9,11 +9,8 @@ const store = useActivityStore();
 const TABS = [
   { key: 'all', label: 'Все' },
   { key: 'geo_mark', label: 'Метки' },
-  { key: 'visited_place', label: 'Путешествия' },
   { key: 'route', label: 'Маршруты' },
   { key: 'post', label: 'Посты' },
-  { key: 'like', label: 'Лайки' },
-  { key: 'registration', label: 'Люди' },
 ];
 
 const TAB_LABELS: Record<string, string> = TABS.reduce((accumulator, tab) => {

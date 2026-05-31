@@ -2,6 +2,7 @@ import api from './api';
 import type { GeoMark, Coordinates } from '@/types';
 import { USE_MOCKS, mockDelay } from '@/config/useMocks';
 import { getMockMyGeoMarks } from '@/mocks';
+import { mockGeoMarks } from '@/mocks/geo-marks';
 
 export interface CreateGeoMarkPayload {
   title: string;
@@ -25,6 +26,19 @@ export const geoMarkApi = {
 
     const { data } = await api.get<GeoMark[]>('/geo-marks');
     return data;
+  },
+
+  async getById(id: string): Promise<GeoMark | null> {
+    if (USE_MOCKS) {
+      return mockDelay(mockGeoMarks.find((mark) => mark._id === id) ?? null);
+    }
+
+    try {
+      const { data } = await api.get<GeoMark>(`/geo-marks/${id}`);
+      return data;
+    } catch {
+      return null;
+    }
   },
 
   async create(payload: CreateGeoMarkPayload): Promise<GeoMark> {

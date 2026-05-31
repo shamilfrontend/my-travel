@@ -21,7 +21,6 @@ const isEditMode = computed(() => !!props.route);
 const name = ref('');
 const description = ref('');
 const selectedMarkIds = ref<string[]>([]);
-const isPublic = ref(false);
 const isLoading = ref(false);
 
 const showQuickCreate = ref(false);
@@ -37,12 +36,10 @@ watch(
       name.value = route.name;
       description.value = route.description || '';
       selectedMarkIds.value = [...(route.geoMarkIds || [])];
-      isPublic.value = route.isPublic;
     } else {
       name.value = '';
       description.value = '';
       selectedMarkIds.value = [];
-      isPublic.value = false;
     }
   },
   { immediate: true },
@@ -111,7 +108,6 @@ async function handleSubmit() {
       name: name.value,
       description: description.value,
       geoMarkIds: selectedMarkIds.value,
-      isPublic: isPublic.value,
     };
 
     if (isEditMode.value && props.route) {
@@ -138,12 +134,6 @@ async function handleSubmit() {
       <div class="form-group">
         <label>Описание</label>
         <textarea v-model="description" class="input" rows="2" />
-      </div>
-      <div class="form-group">
-        <label>
-          <input v-model="isPublic" type="checkbox" />
-          Публичный маршрут
-        </label>
       </div>
       <div class="form-group">
         <div class="marks-header">

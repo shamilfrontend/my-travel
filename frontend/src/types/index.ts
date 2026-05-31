@@ -32,15 +32,20 @@ export interface GeoMark {
   updatedAt: string;
 }
 
+export interface RouteDay {
+  title: string;
+  geoMarkIds: string[];
+}
+
 export interface TravelRoute {
   _id: string;
   name: string;
   description?: string;
   geoMarkIds: string[];
   geoMarks?: GeoMark[];
+  days?: RouteDay[];
   authorId: string;
   author?: { _id: string; name: string; avatarUrl?: string };
-  isPublic: boolean;
   distanceKm?: number;
   copyCount?: number;
   createdAt: string;
@@ -99,7 +104,7 @@ export interface UserWithStats {
   visitedCount: number;
   countriesCount: number;
   citiesCount?: number;
-  publicRoutesCount?: number;
+  routesCount?: number;
 }
 
 export interface AuthResponse {

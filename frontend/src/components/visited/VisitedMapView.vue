@@ -1,28 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useVisitedStore } from '@/stores/visited';
 import { useAuthStore } from '@/stores/auth';
-import type { Coordinates, Like, VisitedPlace, Media } from '@/types';
+import type { Coordinates, GeoMark, Like, VisitedPlace, Media } from '@/types';
 import { likeApi } from '@/services/likeApi';
-import { ALPHA2_TO_NUMERIC } from '@/utils/country-codes';
+import { geoMarkApi } from '@/services/geoMarkApi';
 import VisitedPlaceForm from '@/components/visited/VisitedPlaceForm.vue';
 import LikeButton from '@/components/likes/LikeButton.vue';
 import MediaGallery from '@/components/media/MediaGallery.vue';
 import MediaUploader from '@/components/media/MediaUploader.vue';
-import { addMapTileLayer } from '@/config/map-tiles';
-import { ACTIVE_MAP_POLICY } from '@/config/map-policy';
-import {
-  getCountryDisplayName,
-  getCountryDisplayOverrides,
-} from '@/config/country-display-overrides';
+import { addMapTileLayer, cleanupMapTileLayer, createLeafletMap, syncMapTileLayer } from '@/config/map-tiles';
 import { USE_MOCKS } from '@/config/useMocks';
 import { mockVisitedPlaceComments } from '@/mocks';
 import {
-  getCountriesGeoJSON,
-  getRussiaBounds,
   isPointInRussia,
   type MapRegion,
 } from '@/utils/map-regions';
@@ -43,13 +36,15 @@ const authStore = useAuthStore();
 
 const mapContainer = ref<HTMLDivElement>();
 const mapInstance = ref<L.Map>();
+const isMapMounted = ref(true);
 const markersLayer = ref<L.FeatureGroup>();
-const countriesLayer = ref<L.GeoJSON>();
 const hasAppliedInitialViewport = ref(false);
 
 const showForm = ref(false);
 const formCoords = ref<Coordinates>({ lat: 0, lng: 0 });
 const selectedPlace = ref<VisitedPlace | null>(null);
+const selectedGeoMark = ref<GeoMark | null>(null);
+const geoMarkMarker = ref<L.Marker | null>(null);
 
 const editingPlace = ref<VisitedPlace | null>(null);
 const editTitle = ref('');
@@ -155,6 +150,105 @@ function closeAllPanels() {
   showForm.value = false;
   showEditPanel.value = false;
   selectedPlace.value = null;
+  clearSelectedGeoMark(true);
+
+  if (typeof currentRoute.query.placeId === 'string') {
+    const query = { ...currentRoute.query };
+    delete query.placeId;
+    router.replace({ query });
+  }
+}
+
+function clearGeoMarkMarker() {
+  if (!geoMarkMarker.value) return;
+
+  geoMarkMarker.value.remove();
+  geoMarkMarker.value = null;
+}
+
+function clearSelectedGeoMark(clearQuery = true) {
+  selectedGeoMark.value = null;
+  clearGeoMarkMarker();
+
+  if (!clearQuery || typeof currentRoute.query.markId !== 'string') {
+    return;
+  }
+
+  const query = { ...currentRoute.query };
+  delete query.markId;
+  router.replace({ query });
+}
+
+function focusMapOnCoordinates(coordinates: Coordinates, zoom = 12) {
+  if (!mapInstance.value) return;
+
+  mapInstance.value.setView(
+    [coordinates.lat, coordinates.lng],
+    zoom,
+    { animate: false },
+  );
+}
+
+function renderGeoMarkMarker(mark: GeoMark) {
+  if (!mapInstance.value) return;
+
+  clearGeoMarkMarker();
+  geoMarkMarker.value = L.marker(
+    [mark.coordinates.lat, mark.coordinates.lng],
+    { icon: blueIcon },
+  ).addTo(mapInstance.value);
+}
+
+async function openGeoMarkById(markId: string) {
+  const mark = await geoMarkApi.getById(markId);
+  if (!mark || !isMapMounted.value) return;
+
+  showForm.value = false;
+  showEditPanel.value = false;
+  selectedPlace.value = null;
+  selectedGeoMark.value = mark;
+  focusMapOnCoordinates(mark.coordinates);
+  renderGeoMarkMarker(mark);
+}
+
+function openPlaceById(placeId: string) {
+  const place = visitedStore.displayPlaces.find((item) => item._id === placeId);
+  if (!place) return;
+
+  showForm.value = false;
+  showEditPanel.value = false;
+  clearSelectedGeoMark(false);
+  selectedPlace.value = place;
+  focusMapOnCoordinates(place.coordinates);
+}
+
+function closeSelectedGeoMarkPanel() {
+  clearSelectedGeoMark();
+}
+
+function getDeepLinkMarkId(): string {
+  const value = currentRoute.query.markId;
+  return typeof value === 'string' ? value : '';
+}
+
+function getDeepLinkPlaceId(): string {
+  const value = currentRoute.query.placeId;
+  return typeof value === 'string' ? value : '';
+}
+
+async function applyDeepLinkFromQuery() {
+  if (!isMapReady.value || !isDataReady.value) return;
+
+  const markId = getDeepLinkMarkId();
+  if (markId) {
+    await openGeoMarkById(markId);
+    return;
+  }
+
+  const placeId = getDeepLinkPlaceId();
+  if (placeId) {
+    openPlaceById(placeId);
+  }
 }
 
 const greenIcon = L.icon({
@@ -166,59 +260,19 @@ const greenIcon = L.icon({
   shadowSize: [41, 41],
 });
 
-const rawGeoJSON = getCountriesGeoJSON();
-const countriesGeoJSON = rawGeoJSON;
+const blueIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
 const DEFAULT_MAP_CENTER: L.LatLngExpression = [26.947978976023382, 10.994881808870337];
-const DEFAULT_WORLD_ZOOM = 2.5;
-const COUNTRIES_PANE = 'countriesPane';
-const countryDisplayOverrides = getCountryDisplayOverrides(ACTIVE_MAP_POLICY);
-const NUMERIC_TO_ALPHA2 = Object.entries(ALPHA2_TO_NUMERIC).reduce<Record<string, string>>(
-  (acc, [alpha2, numeric]) => {
-    acc[numeric] = alpha2;
-    return acc;
-  },
-  {},
-);
-
-function expandCountryCodes(codes: string[]): string[] {
-  const result = new Set(codes);
-  codes.forEach((code) => {
-    const implied = countryDisplayOverrides.impliedCountryCodes[code] || [];
-    implied.forEach((extraCode) => result.add(extraCode));
-  });
-  return Array.from(result);
-}
-
-function getVisitedNumericIds(): Set<string> {
-  const sourceCodes = visitedStore.displayStatistics?.countryCodes ?? [];
-  const codes = expandCountryCodes(sourceCodes);
-  const numericIds = new Set<string>();
-  for (const alpha2 of codes) {
-    const numeric = ALPHA2_TO_NUMERIC[alpha2];
-    if (numeric) numericIds.add(numeric);
-  }
-  return numericIds;
-}
-
-function getDisplayCountryName(numericId: string, fallbackName: string): string {
-  const alpha2 = NUMERIC_TO_ALPHA2[numericId];
-  if (!alpha2) return fallbackName;
-  return getCountryDisplayName(alpha2, fallbackName, ACTIVE_MAP_POLICY);
-}
-
-function setupMapPanes() {
-  if (!mapInstance.value) return;
-
-  if (!mapInstance.value.getPane(COUNTRIES_PANE)) {
-    mapInstance.value.createPane(COUNTRIES_PANE);
-    mapInstance.value.getPane(COUNTRIES_PANE)!.style.zIndex = '450';
-  }
-
-  const markerPane = mapInstance.value.getPane('markerPane');
-  if (markerPane) {
-    markerPane.style.zIndex = '650';
-  }
-}
+const DEFAULT_WORLD_ZOOM = 3;
+const RUSSIA_MAP_CENTER: L.LatLngExpression = [61.079063759728385, 88.19588694594019];
+const RUSSIA_MAP_ZOOM = 3.5;
 
 function initMarkersLayer() {
   if (!mapInstance.value) return;
@@ -231,79 +285,50 @@ function initMarkersLayer() {
 }
 
 function refreshMapOverlays() {
-  if (!mapInstance.value) return;
-
-  renderCountries();
+  if (!mapInstance.value || !isMapReady.value || !isDataReady.value) return;
 
   if (!markersLayer.value) {
     initMarkersLayer();
   }
 
   renderMarkers();
+  syncMapTileLayer(mapInstance.value);
 }
 
 function scheduleMapOverlaysRefresh() {
-  window.setTimeout(() => {
+  window.requestAnimationFrame(() => {
     if (!mapInstance.value) return;
-    setupMapPanes();
     refreshMapOverlays();
+  });
+}
+
+const isMapReady = ref(false);
+const isDataReady = ref(false);
+
+function tryApplyInitialOverlays() {
+  if (!mapInstance.value || !isMapReady.value || !isDataReady.value) return;
+
+  window.requestAnimationFrame(() => {
+    if (!mapInstance.value || !isMapReady.value || !isDataReady.value) return;
+
     mapInstance.value.invalidateSize({ animate: false });
-  }, 0);
+
+    if (!hasAppliedInitialViewport.value) {
+      hasAppliedInitialViewport.value = true;
+      applyMapViewportAndRefresh();
+      void applyDeepLinkFromQuery();
+      return;
+    }
+
+    scheduleMapOverlaysRefresh();
+  });
 }
 
 function onMapBaseReady() {
   if (!mapInstance.value) return;
 
-  if (!hasAppliedInitialViewport.value) {
-    hasAppliedInitialViewport.value = true;
-    applyMapViewportAndRefresh();
-    return;
-  }
-
-  scheduleMapOverlaysRefresh();
-}
-
-function renderCountries() {
-  if (!mapInstance.value) return;
-
-  if (countriesLayer.value) {
-    mapInstance.value.removeLayer(countriesLayer.value);
-    countriesLayer.value = undefined;
-  }
-
-  if (props.region === 'russia') return;
-
-  const visitedIds = getVisitedNumericIds();
-
-  countriesLayer.value = L.geoJSON(countriesGeoJSON, {
-    pane: COUNTRIES_PANE,
-    style: (feat) => {
-      const id = feat?.id?.toString() ?? '';
-      const isVisited = visitedIds.has(id);
-
-      return isVisited
-        ? {
-            fillColor: '#10b981',
-            fillOpacity: 0.4,
-            color: '#059669',
-            weight: 2,
-          }
-        : {
-            fillColor: 'transparent',
-            fillOpacity: 0,
-            color: '#cbd5e1',
-            weight: 0.5,
-          };
-    },
-    onEachFeature: (feat, layer) => {
-      const id = feat?.id?.toString() ?? '';
-      if (getVisitedNumericIds().has(id)) {
-        const sourceName = (feat.properties as { name?: string })?.name ?? '';
-        const name = getDisplayCountryName(id, sourceName);
-        layer.bindTooltip(name, { sticky: true, className: 'country-tooltip' });
-      }
-    },
-  }).addTo(mapInstance.value);
+  isMapReady.value = true;
+  tryApplyInitialOverlays();
 }
 
 function isOwnPlace(place: VisitedPlace): boolean {
@@ -328,6 +353,7 @@ function renderMarkers() {
     marker.on('click', () => {
       selectedPlace.value = place;
       showForm.value = false;
+      clearSelectedGeoMark();
     });
     markersLayer.value!.addLayer(marker);
   });
@@ -343,7 +369,8 @@ async function refreshStatistics() {
 
 function getInitialWorldZoom(): number {
   const qZoom = parseInt(currentRoute.query.zoom as string, 10);
-  return !isNaN(qZoom) ? qZoom : DEFAULT_WORLD_ZOOM;
+  const zoom = !isNaN(qZoom) ? qZoom : DEFAULT_WORLD_ZOOM;
+  return Math.round(zoom);
 }
 
 function applyMapViewport(onSettled?: () => void) {
@@ -357,17 +384,19 @@ function applyMapViewport(onSettled?: () => void) {
   };
 
   if (props.region === 'russia') {
-    mapInstance.value.once('moveend', finishViewportChange);
-    mapInstance.value.fitBounds(getRussiaBounds(), {
-      padding: [24, 24],
-      maxZoom: 6,
-      animate: false,
+    mapInstance.value.setView(RUSSIA_MAP_CENTER, RUSSIA_MAP_ZOOM, { animate: false });
+    window.requestAnimationFrame(() => {
+      syncMapTileLayer(mapInstance.value);
+      finishViewportChange();
     });
     return;
   }
 
   mapInstance.value.setView(DEFAULT_MAP_CENTER, getInitialWorldZoom(), { animate: false });
-  finishViewportChange();
+  window.requestAnimationFrame(() => {
+    syncMapTileLayer(mapInstance.value);
+    finishViewportChange();
+  });
 }
 
 function applyMapViewportAndRefresh() {
@@ -375,15 +404,6 @@ function applyMapViewportAndRefresh() {
     refreshMapOverlays();
   });
 }
-
-watch(
-  () => visitedStore.displayStatistics?.countryCodes,
-  () => {
-    if (props.region === 'world') {
-      refreshMapOverlays();
-    }
-  },
-);
 
 watch(
   () => visitedStore.displayPlaces,
@@ -408,23 +428,33 @@ watch(
   },
 );
 
+watch(
+  () => [currentRoute.query.markId, currentRoute.query.placeId],
+  () => {
+    void applyDeepLinkFromQuery();
+  },
+);
+
 onMounted(async () => {
   visitedStore.setMode(props.mode);
-  await visitedStore.loadAll();
 
-  try {
-    myLikes.value = await likeApi.getMyLikes();
-  } catch {
-    // ignore
-  }
+  const dataPromise = visitedStore.loadAll().finally(() => {
+    isDataReady.value = true;
+  });
 
-  if (!mapContainer.value) return;
+  await nextTick();
+  if (!mapContainer.value || !isMapMounted.value) return;
 
-  mapInstance.value = L.map(mapContainer.value).setView(DEFAULT_MAP_CENTER, getInitialWorldZoom());
+  mapInstance.value = createLeafletMap(mapContainer.value).setView(
+    DEFAULT_MAP_CENTER,
+    getInitialWorldZoom(),
+  );
 
-  addMapTileLayer(mapInstance.value, {
+  await addMapTileLayer(mapInstance.value, {
     onReady: onMapBaseReady,
   });
+
+  if (!isMapMounted.value || !mapInstance.value) return;
 
   mapInstance.value.whenReady(onMapBaseReady);
 
@@ -433,7 +463,18 @@ onMounted(async () => {
     showForm.value = true;
     showEditPanel.value = false;
     selectedPlace.value = null;
+    clearSelectedGeoMark();
   });
+
+  try {
+    myLikes.value = await likeApi.getMyLikes();
+  } catch {
+    // ignore
+  }
+
+  await dataPromise;
+  if (!isMapMounted.value || !mapInstance.value) return;
+  tryApplyInitialOverlays();
 });
 
 function openEditPanel(place: VisitedPlace) {
@@ -501,6 +542,14 @@ async function deleteSelectedPlace() {
 function closeSelectedPlacePanel() {
   selectedPlace.value = null;
   selectedCommentText.value = '';
+
+  if (typeof currentRoute.query.placeId !== 'string') {
+    return;
+  }
+
+  const query = { ...currentRoute.query };
+  delete query.placeId;
+  router.replace({ query });
 }
 
 function closeEditPanel() {
@@ -509,6 +558,8 @@ function closeEditPanel() {
 }
 
 onBeforeUnmount(() => {
+  isMapMounted.value = false;
+  cleanupMapTileLayer(mapInstance.value);
   mapInstance.value?.remove();
   mapInstance.value = undefined;
 });
@@ -531,7 +582,28 @@ onMounted(() => {
         @cancel="showForm = false"
       />
 
-      <div v-if="selectedPlace && !showEditPanel" class="selected-place-panel">
+      <div v-if="selectedGeoMark && !showEditPanel" class="selected-place-panel">
+        <div class="panel-header">
+          <h3>{{ selectedGeoMark.title }}</h3>
+          <button
+            type="button"
+            class="close-btn"
+            aria-label="Закрыть карточку метки"
+            @click="closeSelectedGeoMarkPanel"
+          >
+            &times;
+          </button>
+        </div>
+        <p v-if="selectedGeoMark.description" class="note">{{ selectedGeoMark.description }}</p>
+        <p v-else class="note muted">Описание не добавлено</p>
+
+        <div v-if="selectedGeoMark.mediaIds?.length" class="selected-gallery">
+          <p class="section-title">Фотографии</p>
+          <MediaGallery :media-ids="selectedGeoMark.mediaIds" />
+        </div>
+      </div>
+
+      <div v-if="selectedPlace && !showEditPanel && !selectedGeoMark" class="selected-place-panel">
         <div class="panel-header">
           <h3>{{ selectedPlace.title }}</h3>
           <button type="button" class="close-btn" aria-label="Закрыть карточку места" @click="closeSelectedPlacePanel">
@@ -978,22 +1050,5 @@ onMounted(() => {
   .form-actions button {
     width: 100%;
   }
-}
-</style>
-
-<style>
-.country-tooltip {
-  background: rgba(16, 185, 129, 0.9);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 13px;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.country-tooltip::before {
-  border-top-color: rgba(16, 185, 129, 0.9);
 }
 </style>

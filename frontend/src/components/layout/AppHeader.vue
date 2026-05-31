@@ -229,7 +229,7 @@ function closeMobileNav() {
 
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 1rem;
   height: 100%;
 }
 
@@ -620,12 +620,6 @@ function closeMobileNav() {
 
   .mobile-nav {
     transform: translateX(-100%);
-  }
-}
-
-@include tablet {
-  .header-content {
-    padding: 0 1rem;
   }
 }
 

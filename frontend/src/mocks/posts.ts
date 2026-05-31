@@ -179,6 +179,10 @@ function getAuthorId(post: Post): string {
   return typeof post.authorId === 'string' ? post.authorId : post.authorId._id;
 }
 
+export function getMockPostById(id: string): Post | null {
+  return runtimePosts.find((post) => post._id === id) ?? null;
+}
+
 export function getMockPostsResponse(page = 1, limit = 10, userId?: string): PostsResponse {
   const filtered = userId
     ? runtimePosts.filter((post) => getAuthorId(post) === userId)

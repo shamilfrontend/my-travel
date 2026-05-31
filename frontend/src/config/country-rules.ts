@@ -18,6 +18,7 @@ const COUNTRY_RULES: CountryRule[] = [
   { code: 'NO', name: 'Норвегия', patterns: ['норвег', 'осло'] },
   { code: 'BY', name: 'Беларусь', patterns: ['беларус', 'минск'] },
   { code: 'CZ', name: 'Чехия', patterns: ['чех', 'праг'] },
+  { code: 'HU', name: 'Венгрия', patterns: ['венгр', 'будапешт'] },
   { code: 'AT', name: 'Австрия', patterns: ['австри', 'вена'] },
   { code: 'LV', name: 'Латвия', patterns: ['рига', 'латви'] },
   { code: 'LT', name: 'Литва', patterns: ['вильнюс', 'литв'] },

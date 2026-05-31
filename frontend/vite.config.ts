@@ -10,6 +10,17 @@ export default defineConfig(({ mode }) => ({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('world-atlas')) return 'world-atlas';
+          if (id.includes('node_modules/leaflet')) return 'leaflet';
+          if (id.includes('@maptiler')) return 'maptiler';
+        },
+      },
+    },
+  },
   css: {
     preprocessorOptions: {
       scss: {

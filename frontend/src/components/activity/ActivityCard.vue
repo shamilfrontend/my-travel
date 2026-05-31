@@ -134,18 +134,22 @@ function getTargetLink(): string | null {
   }
 
   if (props.activity.type === 'post') {
-    return `/profile?tab=posts&postId=${props.activity.targetId}`;
+    return `/posts/${props.activity.targetId}`;
   }
 
   if (props.activity.type === 'geo_mark') {
-    return '/map?tab=all';
+    return `/map?markId=${props.activity.targetId}`;
   }
 
   if (props.activity.type === 'visited_place') {
-    return '/map?tab=my';
+    return `/map?tab=all&placeId=${props.activity.targetId}`;
   }
 
   return null;
+}
+
+function isCardClickable(): boolean {
+  return getTargetLink() !== null;
 }
 
 function getTargetActionLabel(): string {
@@ -156,7 +160,7 @@ function getTargetActionLabel(): string {
     return 'К событиям';
   }
   if (props.activity.type === 'post') {
-    return 'К профилю автора';
+    return 'Открыть пост';
   }
   if (props.activity.type === 'geo_mark' || props.activity.type === 'visited_place') {
     return 'Открыть на карте';
@@ -188,19 +192,24 @@ function getTargetActionLabel(): string {
       </span>
     </div>
 
-    <div class="card-body">
+    <router-link
+      v-if="isCardClickable()"
+      :to="getTargetLink()!"
+      class="card-body card-body-link"
+    >
       <h3 v-if="getTitle()" class="activity-title">{{ getTitle() }}</h3>
       <p class="activity-text">{{ getBodyText() }}</p>
       <div class="meta-row">
         <span class="meta-tag">{{ getMetaTag() }}</span>
-        <span v-if="activity.targetId" class="meta-id">ID: {{ activity.targetId }}</span>
-        <router-link
-          v-if="getTargetLink()"
-          class="meta-action"
-          :to="getTargetLink()!"
-        >
-          {{ getTargetActionLabel() }}
-        </router-link>
+        <span class="meta-action">{{ getTargetActionLabel() }}</span>
+      </div>
+    </router-link>
+
+    <div v-else class="card-body">
+      <h3 v-if="getTitle()" class="activity-title">{{ getTitle() }}</h3>
+      <p class="activity-text">{{ getBodyText() }}</p>
+      <div class="meta-row">
+        <span class="meta-tag">{{ getMetaTag() }}</span>
       </div>
     </div>
   </div>
@@ -313,6 +322,23 @@ function getTargetActionLabel(): string {
   margin-bottom: 0.75rem;
 }
 
+.card-body-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: $radius-lg;
+  transition: background-color $transition;
+
+  &:hover {
+    background: $gray-50;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+}
+
 .activity-title {
   margin: 0 0 0.375rem;
   font-size: $font-size-base;
@@ -346,21 +372,11 @@ function getTargetActionLabel(): string {
   font-weight: 600;
 }
 
-.meta-id {
-  font-size: 0.75rem;
-  color: $gray-500;
-}
-
 .meta-action {
   margin-left: auto;
   font-size: 0.75rem;
   font-weight: 600;
   color: $primary;
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
 }
 
 @include mobile {

@@ -84,3 +84,9 @@ select {
 .fade-in-up {
   animation: fadeInUp 0.3s ease forwards;
 }
+
+.leaflet-control-attribution.leaflet-control {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}

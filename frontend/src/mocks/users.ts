@@ -171,7 +171,7 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 47,
     countriesCount: 18,
     citiesCount: 32,
-    publicRoutesCount: 5,
+    routesCount: 4,
   },
   {
     _id: MOCK_USER_IDS.maria,
@@ -186,7 +186,7 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 31,
     countriesCount: 12,
     citiesCount: 24,
-    publicRoutesCount: 3,
+    routesCount: 2,
   },
   {
     _id: MOCK_USER_IDS.dmitry,
@@ -199,7 +199,7 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 22,
     countriesCount: 3,
     citiesCount: 19,
-    publicRoutesCount: 4,
+    routesCount: 1,
   },
   {
     _id: MOCK_USER_IDS.elena,
@@ -213,7 +213,7 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 28,
     countriesCount: 9,
     citiesCount: 21,
-    publicRoutesCount: 2,
+    routesCount: 1,
   },
   {
     _id: MOCK_USER_IDS.ivan,
@@ -224,7 +224,7 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 19,
     countriesCount: 5,
     citiesCount: 14,
-    publicRoutesCount: 1,
+    routesCount: 0,
   },
   {
     _id: MOCK_USER_IDS.anna,
@@ -236,7 +236,7 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 35,
     countriesCount: 15,
     citiesCount: 27,
-    publicRoutesCount: 6,
+    routesCount: 2,
   },
   {
     _id: MOCK_USER_IDS.sergey,
@@ -247,7 +247,7 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 16,
     countriesCount: 7,
     citiesCount: 11,
-    publicRoutesCount: 2,
+    routesCount: 1,
   },
   {
     _id: MOCK_USER_IDS.olga,
@@ -259,7 +259,7 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 24,
     countriesCount: 11,
     citiesCount: 18,
-    publicRoutesCount: 3,
+    routesCount: 1,
   },
   {
     _id: MOCK_USER_IDS.nikita,
@@ -270,7 +270,7 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 14,
     countriesCount: 4,
     citiesCount: 10,
-    publicRoutesCount: 2,
+    routesCount: 1,
   },
   {
     _id: MOCK_USER_IDS.katya,
@@ -282,7 +282,7 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 26,
     countriesCount: 6,
     citiesCount: 16,
-    publicRoutesCount: 4,
+    routesCount: 1,
   },
   {
     _id: MOCK_USER_IDS.pavel,
@@ -293,7 +293,7 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 18,
     countriesCount: 8,
     citiesCount: 13,
-    publicRoutesCount: 1,
+    routesCount: 1,
   },
   {
     _id: MOCK_USER_IDS.sofia,
@@ -305,6 +305,6 @@ export const mockUsersWithStats: UserWithStats[] = [
     visitedCount: 12,
     countriesCount: 5,
     citiesCount: 9,
-    publicRoutesCount: 0,
+    routesCount: 1,
   },
 ];

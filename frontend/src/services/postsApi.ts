@@ -3,6 +3,7 @@ import type { Post, Coordinates } from '@/types';
 import { USE_MOCKS, mockDelay } from '@/config/useMocks';
 import {
   getMockPostsResponse,
+  getMockPostById,
   mockCreatePost,
   mockRemovePost,
   mockUpdatePost,
@@ -23,6 +24,19 @@ export const postsApi = {
 
     const { data } = await api.get<PostsResponse>('/posts', { params });
     return data;
+  },
+
+  async getById(id: string): Promise<Post | null> {
+    if (USE_MOCKS) {
+      return mockDelay(getMockPostById(id));
+    }
+
+    try {
+      const { data } = await api.get<Post>(`/posts/${id}`);
+      return data;
+    } catch {
+      return null;
+    }
   },
 
   async create(payload: { text: string; mediaIds?: string[]; location?: Coordinates }): Promise<Post> {

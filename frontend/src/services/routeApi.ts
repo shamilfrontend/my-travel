@@ -1,20 +1,18 @@
 import api from './api';
 import type { TravelRoute } from '@/types';
 import { USE_MOCKS, mockDelay } from '@/config/useMocks';
-import { getMockMyRoutes, getMockPublicRoutes, getMockRouteById } from '@/mocks';
+import { getMockMyRoutes, getMockCommunityRoutes, getMockRouteById } from '@/mocks';
 
 export interface CreateRoutePayload {
   name: string;
   description?: string;
   geoMarkIds: string[];
-  isPublic?: boolean;
 }
 
 export interface UpdateRoutePayload {
   name?: string;
   description?: string;
   geoMarkIds?: string[];
-  isPublic?: boolean;
 }
 
 export const routeApi = {
@@ -27,9 +25,9 @@ export const routeApi = {
     return data;
   },
 
-  async getPublic(sort?: 'recent' | 'popular'): Promise<TravelRoute[]> {
+  async getCommunity(sort?: 'recent' | 'popular'): Promise<TravelRoute[]> {
     if (USE_MOCKS) {
-      const routes = getMockPublicRoutes();
+      const routes = getMockCommunityRoutes();
       const sorted = sort === 'popular'
         ? [...routes].sort((a, b) => (b.copyCount ?? 0) - (a.copyCount ?? 0))
         : routes;
@@ -38,7 +36,7 @@ export const routeApi = {
     }
 
     const params = sort === 'popular' ? { sort: 'popular' } : {};
-    const { data } = await api.get<TravelRoute[]>('/routes/public', { params });
+    const { data } = await api.get<TravelRoute[]>('/routes/community', { params });
     return data;
   },
 

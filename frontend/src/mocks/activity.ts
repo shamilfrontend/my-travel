@@ -117,6 +117,14 @@ const mockActivityItems: ActivityItem[] = [
     createdAt: isoDaysAgo(15),
   },
   {
+    _id: 'activity-028',
+    userId: userRef(MOCK_USER_IDS.alexey, 'Алина Гарифуллина'),
+    type: 'route',
+    targetId: 'route-016',
+    metadata: { name: 'Неповторимый Дагестан' },
+    createdAt: isoDaysAgo(3),
+  },
+  {
     _id: 'activity-009',
     userId: userRef(MOCK_USER_IDS.katya, 'Екатерина Лебедева'),
     type: 'visited_place',

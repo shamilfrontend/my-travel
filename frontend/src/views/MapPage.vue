@@ -1,37 +1,45 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { geoArea } from 'd3-geo';
-import { feature } from 'topojson-client';
-import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import type { Topology, GeometryCollection } from 'topojson-specification';
-import VisitedMapView from '@/components/visited/VisitedMapView.vue';
+import type { UserWithStats } from '@/types';
+import { useAuthStore } from '@/stores/auth';
 import { useVisitedStore } from '@/stores/visited';
-import worldTopology from '@/utils/world-topology';
+import { usersApi } from '@/services/usersApi';
 import { ALPHA2_TO_NUMERIC } from '@/utils/country-codes';
 import {
+  getWorldCountryAreaStats,
   isPointInRussia,
   normalizeMapRegion,
   type MapRegion,
 } from '@/utils/map-regions';
 
+const VisitedMapView = defineAsyncComponent(() =>
+  import('@/components/visited/VisitedMapView.vue'),
+);
+
 const route = useRoute();
 const router = useRouter();
+const authStore = useAuthStore();
 const visitedStore = useVisitedStore();
 const activeRegion = ref<MapRegion>('world');
 const activeMode = ref<'all' | 'my'>('all');
+const users = ref<UserWithStats[]>([]);
+const isLoadingUsers = ref(false);
 
-const topology = worldTopology as unknown as Topology<{ countries: GeometryCollection }>;
-const countryFeatures = feature(topology, topology.objects.countries) as FeatureCollection<Geometry>;
-const countryAreaByNumericCode = new Map<number, number>();
-let totalWorldArea = 0;
+const { countryAreaByNumericCode, totalWorldArea } = getWorldCountryAreaStats();
 
-countryFeatures.features.forEach((countryFeature) => {
-  const numericCode = Number(countryFeature.id);
-  if (!Number.isFinite(numericCode)) return;
-  const countryArea = geoArea(countryFeature as Feature<Geometry>);
-  countryAreaByNumericCode.set(numericCode, countryArea);
-  totalWorldArea += countryArea;
+const mapUserOptions = computed(() => {
+  const currentUserId = authStore.user?._id;
+
+  return users.value
+    .filter((user) => user.visitedCount > 0 && user._id !== currentUserId)
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+});
+
+const selectedUserId = computed(() => {
+  const userId = route.query.userId;
+  return typeof userId === 'string' ? userId : '';
 });
 
 function normalizeTab(value: unknown): 'all' | 'my' {
@@ -59,13 +67,10 @@ const mapStats = computed(() => {
     const russiaPlaces = visitedStore.displayPlaces.filter((place) =>
       isPointInRussia(place.coordinates.lat, place.coordinates.lng),
     );
-    const hasVisitedRussia = countryCodes.includes('RU');
-    const russiaPercent = hasVisitedRussia ? 100 : 0;
 
     return {
-      percent: russiaPercent,
-      percentLabel: 'России',
-      visitedCountries: hasVisitedRussia ? 1 : 0,
+      showPercent: false,
+      showCountries: false,
       visitedLocations: russiaPlaces.length,
     };
   }
@@ -82,6 +87,8 @@ const mapStats = computed(() => {
     : 0;
 
   return {
+    showPercent: true,
+    showCountries: true,
     percent: worldPercent,
     percentLabel: 'мира',
     visitedCountries,
@@ -89,7 +96,11 @@ const mapStats = computed(() => {
   };
 });
 
-function buildRouteQuery(updates: { region?: MapRegion; tab?: 'all' | 'my' }) {
+function buildRouteQuery(updates: {
+  region?: MapRegion;
+  tab?: 'all' | 'my';
+  userId?: string | null;
+}) {
   const query = { ...route.query } as Record<string, string | string[] | undefined>;
 
   if ('region' in updates) {
@@ -104,8 +115,27 @@ function buildRouteQuery(updates: { region?: MapRegion; tab?: 'all' | 'my' }) {
     query.tab = updates.tab;
   }
 
+  if ('userId' in updates) {
+    if (updates.userId) {
+      query.userId = updates.userId;
+    } else {
+      delete query.userId;
+    }
+  }
+
   return query;
 }
+
+onMounted(async () => {
+  isLoadingUsers.value = true;
+  try {
+    users.value = await usersApi.getAll();
+  } catch {
+    users.value = [];
+  } finally {
+    isLoadingUsers.value = false;
+  }
+});
 
 watch(
   () => route.query.region,
@@ -125,6 +155,13 @@ watch(
 watch(
   () => route.query.tab,
   (tab) => {
+    if (typeof route.query.userId === 'string') {
+      if (activeMode.value !== 'all') {
+        activeMode.value = 'all';
+      }
+      return;
+    }
+
     const nextTab = normalizeTab(tab);
     if (activeMode.value !== nextTab) {
       activeMode.value = nextTab;
@@ -137,6 +174,28 @@ watch(
   { immediate: true },
 );
 
+watch(
+  () => route.query.userId,
+  (userId) => {
+    if (typeof userId !== 'string' || !userId) {
+      visitedStore.setFilterUserId(null);
+      return;
+    }
+
+    const currentUserId = authStore.user?._id;
+    if (currentUserId && userId === currentUserId) {
+      router.replace({ query: buildRouteQuery({ tab: 'my', userId: null }) });
+      return;
+    }
+
+    visitedStore.setFilterUserId(userId);
+    if (activeMode.value !== 'all') {
+      activeMode.value = 'all';
+    }
+  },
+  { immediate: true },
+);
+
 function setRegion(region: MapRegion) {
   if (activeRegion.value === region && normalizeMapRegion(route.query.region) === region) return;
   activeRegion.value = region;
@@ -144,9 +203,39 @@ function setRegion(region: MapRegion) {
 }
 
 function setMode(mode: 'all' | 'my') {
-  if (activeMode.value === mode && route.query.tab === mode) return;
+  const hasUserFilter = typeof route.query.userId === 'string';
+  if (activeMode.value === mode && route.query.tab === mode && !hasUserFilter) return;
+
+  visitedStore.setFilterUserId(null);
   activeMode.value = mode;
-  router.replace({ query: buildRouteQuery({ tab: mode }) });
+  router.replace({ query: buildRouteQuery({ tab: mode, userId: null }) });
+}
+
+function setFilterUser(userId: string) {
+  if (!userId) {
+    clearUserFilter();
+    return;
+  }
+
+  const currentUserId = authStore.user?._id;
+  if (currentUserId && userId === currentUserId) {
+    activeMode.value = 'my';
+    router.replace({ query: buildRouteQuery({ tab: 'my', userId: null }) });
+    return;
+  }
+
+  activeMode.value = 'all';
+  router.replace({ query: buildRouteQuery({ tab: 'all', userId }) });
+}
+
+function clearUserFilter() {
+  visitedStore.setFilterUserId(null);
+  router.replace({ query: buildRouteQuery({ userId: null }) });
+}
+
+function handleUserFilterChange(event: Event) {
+  const target = event.target as HTMLSelectElement;
+  setFilterUser(target.value);
 }
 </script>
 
@@ -172,35 +261,57 @@ function setMode(mode: 'all' | 'my') {
         </button>
       </div>
 
-      <div
-        class="mode-radio-group"
-        role="radiogroup"
-        aria-label="Режим просмотра меток"
-      >
-        <label
-          v-for="item in modeOptions"
-          :key="item.value"
-          class="mode-radio"
-          :class="{ active: activeMode === item.value }"
+      <div class="mode-controls">
+        <div
+          class="mode-radio-group"
+          role="radiogroup"
+          aria-label="Режим просмотра меток"
         >
-          <input
-            type="radio"
-            name="map-mode"
-            class="mode-radio__input"
-            :value="item.value"
-            :checked="activeMode === item.value"
-            @change="setMode(item.value)"
+          <label
+            v-for="item in modeOptions"
+            :key="item.value"
+            class="mode-radio"
+            :class="{ active: activeMode === item.value }"
           >
-          <span class="mode-radio__label">{{ item.label }}</span>
+            <input
+              type="radio"
+              name="map-mode"
+              class="mode-radio__input"
+              :value="item.value"
+              :checked="activeMode === item.value"
+              @change="setMode(item.value)"
+            >
+            <span class="mode-radio__label">{{ item.label }}</span>
+          </label>
+        </div>
+
+        <label class="user-filter">
+          <span class="user-filter__label">Пользователь</span>
+          <select
+            class="user-filter__select"
+            :value="selectedUserId"
+            :disabled="isLoadingUsers"
+            aria-label="Показать метки пользователя"
+            @change="handleUserFilterChange"
+          >
+            <option value="">Не выбран</option>
+            <option
+              v-for="user in mapUserOptions"
+              :key="user._id"
+              :value="user._id"
+            >
+              {{ user.name }}
+            </option>
+          </select>
         </label>
       </div>
 
       <div class="stats-list" aria-label="Статистика посещений">
-        <div class="stats-item">
+        <div v-if="mapStats.showPercent && mapStats.percent !== undefined" class="stats-item">
           <span class="stats-value">{{ mapStats.percent.toFixed(1) }}%</span>
           <span class="stats-label">{{ mapStats.percentLabel }}</span>
         </div>
-        <div class="stats-item">
+        <div v-if="mapStats.showCountries && mapStats.visitedCountries !== undefined" class="stats-item">
           <span class="stats-value">{{ mapStats.visitedCountries }}</span>
           <span class="stats-label">стран</span>
         </div>
@@ -212,7 +323,15 @@ function setMode(mode: 'all' | 'my') {
     </div>
 
     <div class="map-content">
-      <VisitedMapView :mode="activeMode" :region="activeRegion" />
+      <Suspense>
+        <VisitedMapView :mode="activeMode" :region="activeRegion" />
+        <template #fallback>
+          <div class="map-loading" aria-live="polite">
+            <div class="map-loading__spinner" />
+            <p>Загрузка карты...</p>
+          </div>
+        </template>
+      </Suspense>
     </div>
   </div>
 </template>
@@ -276,9 +395,17 @@ function setMode(mode: 'all' | 'my') {
   }
 }
 
-.mode-radio-group {
+.mode-controls {
   grid-column: 2;
   justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mode-radio-group {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -320,6 +447,49 @@ function setMode(mode: 'all' | 'my') {
   line-height: 1;
 }
 
+.user-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.user-filter__label {
+  font-size: $font-size-sm;
+  font-weight: 500;
+  color: $gray-500;
+  white-space: nowrap;
+}
+
+.user-filter__select {
+  min-width: 9rem;
+  max-width: 11rem;
+  height: 36px;
+  padding: 0 1.75rem 0 0.625rem;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  color: $gray-700;
+  background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E") no-repeat right 0.5rem center;
+  border: 1px solid $gray-200;
+  border-radius: $radius;
+  cursor: pointer;
+  appearance: none;
+
+  &:hover:not(:disabled) {
+    border-color: $gray-300;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: rgba($primary, 0.35);
+    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 .stats-list {
   grid-column: 3;
   justify-self: end;
@@ -354,6 +524,32 @@ function setMode(mode: 'all' | 'my') {
   overflow: hidden;
 }
 
+.map-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: $gray-500;
+  background: $gray-50;
+}
+
+.map-loading__spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid $gray-200;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: map-loading-spin 0.8s linear infinite;
+}
+
+@keyframes map-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @include mobile {
   .tabs-bar {
     grid-template-columns: 1fr auto;
@@ -369,10 +565,23 @@ function setMode(mode: 'all' | 'my') {
     -webkit-overflow-scrolling: touch;
   }
 
-  .mode-radio-group {
+  .mode-controls {
     grid-column: 1 / -1;
     grid-row: 2;
     justify-self: center;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .user-filter {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .user-filter__select {
+    max-width: 14rem;
+    flex: 1;
   }
 
   .tab-btn {

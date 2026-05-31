@@ -29,6 +29,7 @@ export {
 } from './notifications';
 export {
   getMockPostsResponse,
+  getMockPostById,
   mockCreatePost,
   mockUpdatePost,
   mockRemovePost,
@@ -54,25 +55,23 @@ export function getMockUserById(id: string): UserWithStats | undefined {
   return mockUsersWithStats.find((u) => u._id === id);
 }
 
-export function getMockRoutesByAuthor(authorId: string, publicOnly = false): TravelRoute[] {
-  return mockRoutes.filter(
-    (r) => r.authorId === authorId && (!publicOnly || r.isPublic),
-  );
+export function getMockRoutesByAuthor(authorId: string): TravelRoute[] {
+  return mockRoutes.filter((r) => r.authorId === authorId);
 }
 
 export function getMockMyRoutes(): TravelRoute[] {
   return getMockRoutesByAuthor(MOCK_CURRENT_USER_ID);
 }
 
-export function getMockPublicRoutes(): TravelRoute[] {
-  return mockRoutes.filter((r) => r.isPublic);
+export function getMockCommunityRoutes(): TravelRoute[] {
+  return mockRoutes.filter((r) => r.authorId !== MOCK_CURRENT_USER_ID);
 }
 
 export function getMockRouteById(id: string): TravelRoute | undefined {
   return mockRoutes.find((r) => r._id === id);
 }
 
-function getMockVisitedByUser(userId: string): VisitedPlace[] {
+export function getMockVisitedByUser(userId: string): VisitedPlace[] {
   return mockVisitedPlaces.filter((p) => p.userId === userId);
 }
 
